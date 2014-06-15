@@ -1,53 +1,80 @@
 package request;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import request.task.AddDocumentTask;
+import request.task.DeleteDocumentTask;
+import request.task.GetDocumentMetadataTask;
+import request.task.GetDocumentTask;
 import stats.BasicStatisticValue;
-import storage.messages.DeleteDocumentMessage;
-import storage.messages.PersistDocumentMessage;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RequestController
 {
-	private final ExecutorService es;
+	private static final AtomicReference<RequestController> INSTANCE = new AtomicReference<>(null);
 
-	private final BasicStatisticValue documentAddedRequest = new BasicStatisticValue("RequestController", "documentAddedRequest");
-	private final BasicStatisticValue documentFetchedRequest = new BasicStatisticValue("RequestController", "documentFetchedRequest");
-	private final BasicStatisticValue documentDeletedRequest = new BasicStatisticValue("RequestController", "documentDeletedRequest");
+	private final IExecutorService es;
 
-	public RequestController(ExecutorService es)
+	private final BasicStatisticValue documentAddRequest = new BasicStatisticValue("RequestController", "documentAddRequest");
+	private final BasicStatisticValue documentGetRequest = new BasicStatisticValue("RequestController", "documentGetRequest");
+	private final BasicStatisticValue documentDeleteRequest = new BasicStatisticValue("RequestController", "documentDeleteRequest");
+
+	public static RequestController getInstance()
 	{
-		this.es = es;
+		return INSTANCE.get();
+	}
+
+	public RequestController(final HazelcastInstance hz)
+	{
+		this.es = hz.getExecutorService("inazumaExecutor");
+
+		INSTANCE.set(this);
 	}
 
 	public String getDocumentMetadata(final String userID)
 	{
-		try
-		{
-			final GetDocumentMetadataTask task = new GetDocumentMetadataTask(userID);
-			Future<String> future = es.submit(task);
-			return future.get();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return null;
+		final GetDocumentMetadataTask task = new GetDocumentMetadataTask(userID);
+
+		return getResultFromCallable(task, userID);
 	}
 
-	public void addDocument(final PersistDocumentMessage message)
+	public void addDocument(final String userID, final String key, final String json, final long created)
 	{
-		documentAddedRequest.increment();
-		final AddDocumentTask task = new AddDocumentTask(message);
-		es.submit(task);
+		documentAddRequest.increment();
+
+		final AddDocumentTask task = new AddDocumentTask(userID, key, json, created);
+		es.submitToKeyOwner(task, userID);
 	}
 
 	public String getDocument(final String userID, final String key)
 	{
-		documentFetchedRequest.increment();
+		documentGetRequest.increment();
+
 		final GetDocumentTask task = new GetDocumentTask(userID, key);
-		final Future<String> future = es.submit(task);
+
+		return getResultFromCallable(task, key);
+	}
+
+	public void deleteDocument(final String userID, final String key)
+	{
+		documentDeleteRequest.increment();
+
+		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key);
+		es.submitToKeyOwner(task, userID);
+	}
+
+	public void shutdown()
+	{
+		INSTANCE.set(null);
+	}
+
+	private String getResultFromCallable(final Callable<String> task, final String key)
+	{
+		final Future<String> future = es.submitToKeyOwner(task, key);
 
 		try
 		{
@@ -59,16 +86,5 @@ public class RequestController
 		}
 
 		return null;
-	}
-
-	public void deleteDocument(final DeleteDocumentMessage message)
-	{
-		documentDeletedRequest.increment();
-		final DeleteDocumentTask task = new DeleteDocumentTask(message);
-		es.submit(task);
-	}
-
-	public void shutdown()
-	{
 	}
 }

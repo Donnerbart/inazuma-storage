@@ -1,9 +1,7 @@
 package jmx;
 
 import com.carrotsearch.hppc.IntObjectOpenHashMap;
-import main.Main;
-import storage.messages.DeleteDocumentMessage;
-import storage.messages.PersistDocumentMessage;
+import request.RequestController;
 import util.NamedThreadFactory;
 
 import java.util.Random;
@@ -19,21 +17,24 @@ public class InazumaStorageWrapper implements InazumaStorageWrapperMBean
 	{
 		for (int userID = 1; userID <= MAX_USER; userID++)
 		{
-			MAILS.put(userID, "{\"content\":" + userID + "}");
+			MAILS.put(userID, "{\"userID\":" + userID + "}");
 		}
 	}
 
 	@Override
-	public void insertSingleDocumentForUser(final int userID)
+	public String insertSingleDocumentForUser(final int userID)
 	{
-		final PersistDocumentMessage message = createDocumentForUser(userID);
-		Main.getRequestController().addDocument(message);
+		final String key = UUID.randomUUID().toString();
+		final long created = (System.currentTimeMillis() / 1000) - generator.nextInt(86400);
+		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created);
+
+		return key;
 	}
 
 	@Override
-	public void insertSingleDocument()
+	public String insertSingleDocument()
 	{
-		insertSingleDocumentForUser(createRandomUserID());
+		return insertSingleDocumentForUser(createRandomUserID());
 	}
 
 	@Override
@@ -71,30 +72,23 @@ public class InazumaStorageWrapper implements InazumaStorageWrapperMBean
 	@Override
 	public String returnDocumentMetadata(final String userID)
 	{
-		return Main.getRequestController().getDocumentMetadata(userID);
+		return RequestController.getInstance().getDocumentMetadata(userID);
 	}
 
 	@Override
 	public String returnDocument(final String userID, final String key)
 	{
-		return Main.getRequestController().getDocument(userID, key);
+		return RequestController.getInstance().getDocument(userID, key);
 	}
 
 	@Override
 	public void deleteDocument(final String userID, final String key)
 	{
-		final DeleteDocumentMessage message = new DeleteDocumentMessage(userID, key);
-		Main.getRequestController().deleteDocument(message);
+		RequestController.getInstance().deleteDocument(userID, key);
 	}
 
 	private int createRandomUserID()
 	{
 		return generator.nextInt(MAX_USER) + 1;
-	}
-
-	private PersistDocumentMessage createDocumentForUser(final int userID)
-	{
-		final long created = (System.currentTimeMillis() / 1000) - generator.nextInt(86400);
-		return new PersistDocumentMessage(String.valueOf(userID), UUID.randomUUID().toString(), MAILS.get(userID), created);
 	}
 }

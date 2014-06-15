@@ -4,10 +4,9 @@ import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import model.DocumentMetadata;
 import scala.concurrent.duration.Duration;
-import serialization.GsonController;
-import storage.messages.*;
+import storage.message.*;
+import storage.model.DocumentMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +19,6 @@ class StorageProcessor extends UntypedActor
 
 	private final StorageController storageController;
 	private final String userID;
-	private final GsonController gson;
 
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -32,9 +30,8 @@ class StorageProcessor extends UntypedActor
 	{
 		this.storageController = storageController;
 		this.userID = userID;
-		this.gson = new GsonController(userID);
 
-		processLoadDocumentMetadataMessage(new LoadDocumentMetadataMessage(userID));
+		processLoadDocumentMetadataMessage(new BaseMessage(MessageType.LOAD_DOCUMENT_METADATA, userID));
 	}
 
 	@Override
@@ -51,9 +48,11 @@ class StorageProcessor extends UntypedActor
 			processReceivedTimeout();
 			return;
 		}
-		else if (message instanceof LoadDocumentMetadataMessage)
+
+		final BaseMessage baseMessage = (message instanceof BaseMessage) ? (BaseMessage) message : null;
+		if (baseMessage != null && baseMessage.getType() == MessageType.LOAD_DOCUMENT_METADATA)
 		{
-			processLoadDocumentMetadataMessage((LoadDocumentMetadataMessage) message);
+			processLoadDocumentMetadataMessage(baseMessage);
 			return;
 		}
 		else if (!isReady)
@@ -62,25 +61,40 @@ class StorageProcessor extends UntypedActor
 			return;
 		}
 
-		if (message instanceof PersistDocumentMetadataMessage)
+		if (baseMessage != null)
 		{
-			processPersistDocumentMetadata((PersistDocumentMetadataMessage) message);
-		}
-		else if (message instanceof FetchDocumentMetadataMessage)
-		{
-			processFetchDocumentMetadata((FetchDocumentMetadataMessage) message);
-		}
-		else if (message instanceof PersistDocumentMessage)
-		{
-			processPersistDocument((PersistDocumentMessage) message);
-		}
-		else if (message instanceof FetchDocumentMessage)
-		{
-			processFetchDocument((FetchDocumentMessage) message);
-		}
-		else if (message instanceof DeleteDocumentMessage)
-		{
-			processDeleteDocument((DeleteDocumentMessage) message);
+			switch (baseMessage.getType())
+			{
+				case PERSIST_DOCUMENT_METADATA:
+				{
+					processPersistDocumentMetadata(baseMessage);
+					break;
+				}
+				case ADD_DOCUMENT:
+				{
+					processPersistDocument((AddDocumentMessage) message);
+					break;
+				}
+				case DELETE_DOCUMENT:
+				{
+					processDeleteDocument((BaseMessageWithKey) message);
+					break;
+				}
+				case FETCH_DOCUMENT:
+				{
+					processFetchDocument((BaseMessageWithKey) message);
+					break;
+				}
+				case FETCH_DOCUMENT_METADATA:
+				{
+					processFetchDocumentMetadata(baseMessage);
+					break;
+				}
+				default:
+				{
+					unhandled(message);
+				}
+			}
 		}
 		else
 		{
@@ -105,17 +119,17 @@ class StorageProcessor extends UntypedActor
 		documentMetadataMap.clear();
 		storageController.incrementStorageProcessorDestroyed();
 
-		context().parent().tell(new StorageProcessorIdleMessage(userID), self());
+		context().parent().tell(new BaseMessage(MessageType.STORAGE_PROCESSOR_IDLE, userID), self());
 	}
 
-	private void processLoadDocumentMetadataMessage(final LoadDocumentMetadataMessage message)
+	private void processLoadDocumentMetadataMessage(final BaseMessage message)
 	{
 		try
 		{
 			final String documentMetadataJSON = storageController.getStorageDBController().getUserDocumentMetadata(userID);
 			if (documentMetadataJSON != null)
 			{
-				documentMetadataMap = gson.getDocumentMetadataMap(documentMetadataJSON);
+				documentMetadataMap = StorageJsonController.getDocumentMetadataMap(documentMetadataJSON);
 
 				if (documentMetadataMap == null)
 				{
@@ -134,13 +148,13 @@ class StorageProcessor extends UntypedActor
 		}
 	}
 
-	private void processPersistDocumentMetadata(final PersistDocumentMetadataMessage message)
+	private void processPersistDocumentMetadata(final BaseMessage message)
 	{
 		persistDocumentMetadataMessageInQueue = false;
 
 		try
 		{
-			storageController.getStorageDBController().storeDocumentMetadata(userID, gson.toJson(documentMetadataMap));
+			storageController.getStorageDBController().storeDocumentMetadata(userID, StorageJsonController.toJson(documentMetadataMap));
 		}
 		catch (Exception e)
 		{
@@ -155,16 +169,17 @@ class StorageProcessor extends UntypedActor
 		storageController.incrementMetadataPersisted();
 	}
 
-	private void processFetchDocumentMetadata(final FetchDocumentMetadataMessage message)
+	@SuppressWarnings("unchecked")
+	private void processFetchDocumentMetadata(final BaseMessage message)
 	{
-		message.getCallback().setResult(gson.toJson(documentMetadataMap));
+		((BaseCallbackMessage<String>) message).setResult(StorageJsonController.toJson(documentMetadataMap));
 	}
 
-	private void processPersistDocument(final PersistDocumentMessage message)
+	private void processPersistDocument(final AddDocumentMessage message)
 	{
 		try
 		{
-			storageController.getStorageDBController().storeDocument(message.getKey(), message.getDocument());
+			storageController.getStorageDBController().storeDocument(message.getKey(), message.getJson());
 		}
 		catch (Exception e)
 		{
@@ -185,26 +200,27 @@ class StorageProcessor extends UntypedActor
 			persistDocumentMetadataMessageInQueue = true;
 
 			storageController.incrementQueueSize();
-			context().parent().tell(new PersistDocumentMetadataMessage(userID), getSelf());
+			context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 		}
 	}
 
-	private void processFetchDocument(final FetchDocumentMessage message)
+	@SuppressWarnings("unchecked")
+	private void processFetchDocument(final BaseMessageWithKey message)
 	{
 		final String document = storageController.getStorageDBController().getDocument(message.getKey());
-		message.getCallback().setResult(document);
+		((BaseCallbackMessageWithKey<String>) message).setResult(document);
 
 		storageController.incrementDocumentFetched();
 	}
 
-	private void processDeleteDocument(final DeleteDocumentMessage message)
+	private void processDeleteDocument(final BaseMessageWithKey message)
 	{
 		try
 		{
 			storageController.getStorageDBController().deleteDocument(message.getKey());
 			documentMetadataMap.remove(message.getKey());
 
-			context().parent().tell(new PersistDocumentMetadataMessage(userID), getSelf());
+			context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 		}
 		catch (Exception e)
 		{

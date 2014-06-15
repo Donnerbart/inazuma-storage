@@ -3,9 +3,9 @@ package jmx;
 @SuppressWarnings("unused")
 public interface InazumaStorageWrapperMBean
 {
-	public void insertSingleDocumentForUser(int userID);
+	public String insertSingleDocumentForUser(int userID);
 
-	public void insertSingleDocument();
+	public String insertSingleDocument();
 
 	public void insertThousandDocuments();
 

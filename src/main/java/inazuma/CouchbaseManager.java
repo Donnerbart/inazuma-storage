@@ -1,4 +1,4 @@
-package database;
+package inazuma;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactory;
@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class ConnectionManager
+public class CouchbaseManager
 {
 	private static final CouchbaseClient client;
 
@@ -44,7 +44,7 @@ public class ConnectionManager
 		}
 	}
 
-	public static CouchbaseClient getConnection()
+	public static CouchbaseClient getClient()
 	{
 		return client;
 	}

@@ -1,19 +1,11 @@
-package serialization;
+package storage.model;
 
 import com.google.gson.*;
-import model.DocumentMetadata;
 
 import java.lang.reflect.Type;
 
-class DocumentMetadataAdapter implements JsonSerializer<DocumentMetadata>, JsonDeserializer<DocumentMetadata>
+public class DocumentMetadataAdapter implements JsonSerializer<DocumentMetadata>, JsonDeserializer<DocumentMetadata>
 {
-	private final String userID;
-
-	public DocumentMetadataAdapter(final String userID)
-	{
-		this.userID = userID;
-	}
-
 	@Override
 	public JsonElement serialize(final DocumentMetadata documentMetadata, final Type type, final JsonSerializationContext jsonSerializationContext)
 	{
@@ -30,7 +22,6 @@ class DocumentMetadataAdapter implements JsonSerializer<DocumentMetadata>, JsonD
 	{
 		final JsonObject object = jsonElement.getAsJsonObject();
 		return new DocumentMetadata(
-				userID,
 				object.get("c").getAsLong(),
 				object.get("r").getAsBoolean()
 		);

@@ -7,12 +7,7 @@ import scala.concurrent.duration.Duration;
 import stats.BasicStatisticValue;
 import stats.CustomStatisticValue;
 import stats.StatisticManager;
-import storage.callbacks.FetchDocumentCallback;
-import storage.callbacks.FetchDocumentMetadataCallback;
-import storage.messages.DeleteDocumentMessage;
-import storage.messages.FetchDocumentMessage;
-import storage.messages.FetchDocumentMetadataMessage;
-import storage.messages.PersistDocumentMessage;
+import storage.message.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,37 +45,37 @@ public class StorageController
 
 	public String getDocumentMetadata(final String userID)
 	{
-		final FetchDocumentMetadataCallback callback = new FetchDocumentMetadataCallback();
-		storageDispatcher.tell(new FetchDocumentMetadataMessage(userID, callback), ActorRef.noSender());
+		final BaseCallbackMessage<String> message = new BaseCallbackMessage<>(MessageType.FETCH_DOCUMENT_METADATA, userID);
+		storageDispatcher.tell(message, ActorRef.noSender());
 
-		return callback.getResult();
+		return message.getCallback().getResult();
 	}
 
-	public void addDocument(final PersistDocumentMessage message)
+	public void addDocumentAsync(final String userID, final String key, final String json, final long created)
 	{
 		queueSize.incrementAndGet();
 		documentAdded.increment();
+
+		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created);
 		storageDispatcher.tell(message, ActorRef.noSender());
 	}
 
 	public String getDocument(final String userID, final String key)
 	{
 		queueSize.incrementAndGet();
-		final FetchDocumentCallback callback = new FetchDocumentCallback();
-		storageDispatcher.tell(new FetchDocumentMessage(userID, key, callback), ActorRef.noSender());
 
-		return callback.getResult();
+		final BaseCallbackMessageWithKey<String> message = new BaseCallbackMessageWithKey<>(MessageType.FETCH_DOCUMENT, userID, key);
+		storageDispatcher.tell(message, ActorRef.noSender());
+
+		return message.getCallback().getResult();
 	}
 
-	public void deleteDocument(final DeleteDocumentMessage message)
+	public void deleteDocumentAsync(final String userID, final String key)
 	{
 		queueSize.incrementAndGet();
-		storageDispatcher.tell(message, ActorRef.noSender());
-	}
 
-	public long getQueueSize()
-	{
-		return queueSize.get();
+		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.DELETE_DOCUMENT, userID, key);
+		storageDispatcher.tell(message, ActorRef.noSender());
 	}
 
 	public void shutdown()
@@ -98,6 +93,11 @@ public class StorageController
 	public void awaitShutdown()
 	{
 		actorSystem.awaitTermination(Duration.create(60, TimeUnit.MINUTES));
+	}
+
+	long getQueueSize()
+	{
+		return queueSize.get();
 	}
 
 	StorageDBController getStorageDBController()
@@ -138,7 +138,7 @@ public class StorageController
 		documentFetched.increment();
 	}
 
-	public void incrementDataDeleted()
+	void incrementDataDeleted()
 	{
 		queueSize.decrementAndGet();
 		documentDeleted.increment();

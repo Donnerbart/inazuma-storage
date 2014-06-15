@@ -1,12 +1,13 @@
-package storage.callbacks;
+package storage.callback;
 
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class BlockingCallback<T>
+public class BlockingCallback<T> implements Serializable
 {
 	private final AtomicReference<T> result = new AtomicReference<>(null);
 	private final Lock lock = new ReentrantLock();

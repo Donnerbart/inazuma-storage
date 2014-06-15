@@ -3,8 +3,7 @@ package storage;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
-import storage.messages.StorageProcessorIdleMessage;
-import storage.messages.UserIDBaseMessage;
+import storage.message.BaseMessage;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -23,30 +22,37 @@ class StorageDispatcher extends UntypedActor
 	@Override
 	public void onReceive(Object message) throws Exception
 	{
-		if (message instanceof StorageProcessorIdleMessage)
+		if (message instanceof BaseMessage)
 		{
-			dispatch((StorageProcessorIdleMessage) message);
-		}
-		else if (message instanceof UserIDBaseMessage)
-		{
-			dispatch(((UserIDBaseMessage) message).getUserID(), message);
+			final BaseMessage baseMessage = (BaseMessage) message;
+			switch (baseMessage.getType())
+			{
+				case STORAGE_PROCESSOR_IDLE:
+				{
+					storageProcessorByUserID.remove(baseMessage.getUserID());
+					sender().tell(PoisonPill.getInstance(), self());
+					break;
+				}
+				case DELETE_DOCUMENT:
+				case FETCH_DOCUMENT:
+				case FETCH_DOCUMENT_METADATA:
+				case LOAD_DOCUMENT_METADATA:
+				case ADD_DOCUMENT:
+				case PERSIST_DOCUMENT_METADATA:
+				{
+					findOrCreateProcessorFor(baseMessage.getUserID()).tell(message, self());
+					break;
+				}
+				default:
+				{
+					unhandled(message);
+				}
+			}
 		}
 		else
 		{
 			unhandled(message);
 		}
-	}
-
-	private void dispatch(final String userID, final Object message)
-	{
-		findOrCreateProcessorFor(userID).tell(message, self());
-	}
-
-	private void dispatch(final StorageProcessorIdleMessage message)
-	{
-		storageProcessorByUserID.remove(message.getUserID());
-
-		sender().tell(PoisonPill.getInstance(), self());
 	}
 
 	private ActorRef findOrCreateProcessorFor(final String userID)
