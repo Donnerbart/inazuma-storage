@@ -7,7 +7,7 @@ import util.NamedThreadFactory;
 import java.util.Random;
 import java.util.UUID;
 
-public class InazumaStorageWrapper implements InazumaStorageWrapperMBean
+public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrapperMBean
 {
 	private static final int MAX_USER = 100000;
 	private static final IntObjectOpenHashMap<String> MAILS = new IntObjectOpenHashMap<>();

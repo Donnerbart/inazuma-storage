@@ -10,14 +10,14 @@ public class JMXAgent
 {
 	private static final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
-	public JMXAgent()
+	public JMXAgent(final String domain, final String type)
 	{
 		try
 		{
-			mbs.registerMBean(new InazumaStorageWrapper(), new ObjectName("de.donnerbart:type=InazumaStorage"));
+			mbs.registerMBean(new InazumaStorageRequestWrapper(), new ObjectName(domain + ":type=" + type));
 
 			// Provide StatisticManager with data for JMX agent
-			StatisticManager.getInstance().registerMBean(mbs, "de.donnerbart:type=StatisticManager");
+			StatisticManager.getInstance().registerMBean(mbs, domain + ":type=StatisticManager");
 		}
 		catch (Exception e)
 		{

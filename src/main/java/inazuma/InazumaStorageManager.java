@@ -25,7 +25,7 @@ public class InazumaStorageManager
 		final CouchbaseClient cb = CouchbaseManager.getClient();
 
 		// Start JMX agent
-		new JMXAgent();
+		new JMXAgent("de.donnerbart", "InazumaStorage");
 
 		// Startup storage controller
 		final StorageController storageController = new StorageController(cb);

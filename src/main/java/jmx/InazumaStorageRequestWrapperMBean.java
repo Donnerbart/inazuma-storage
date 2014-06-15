@@ -1,7 +1,7 @@
 package jmx;
 
 @SuppressWarnings("unused")
-public interface InazumaStorageWrapperMBean
+public interface InazumaStorageRequestWrapperMBean
 {
 	public String insertSingleDocumentForUser(int userID);
 
