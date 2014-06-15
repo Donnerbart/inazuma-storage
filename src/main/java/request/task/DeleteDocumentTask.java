@@ -1,6 +1,6 @@
 package request.task;
 
-import inazuma.InazumaStorageManager;
+import request.RequestController;
 
 import java.util.concurrent.Callable;
 
@@ -20,7 +20,7 @@ public class DeleteDocumentTask implements Callable<Boolean>
 	{
 		//System.out.println("Delete document for user " + userID + " with key " + key);
 
-		InazumaStorageManager.getStorageController().deleteDocumentAsync(userID, key);
+		RequestController.getStorageControllerInstance().deleteDocumentAsync(userID, key);
 
 		return true;
 	}

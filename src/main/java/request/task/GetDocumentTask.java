@@ -1,6 +1,6 @@
 package request.task;
 
-import inazuma.InazumaStorageManager;
+import request.RequestController;
 
 import java.util.concurrent.Callable;
 
@@ -20,7 +20,7 @@ public class GetDocumentTask implements Callable<String>
 	{
 		//System.out.println("Get document for user " + userID + " with key " + key);
 
-		return InazumaStorageManager.getStorageController().getDocument(userID, key);
+		return RequestController.getStorageControllerInstance().getDocument(userID, key);
 	}
 
 	public String getUserID()

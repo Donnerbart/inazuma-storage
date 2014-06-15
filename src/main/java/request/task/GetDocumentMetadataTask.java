@@ -1,6 +1,6 @@
 package request.task;
 
-import inazuma.InazumaStorageManager;
+import request.RequestController;
 
 import java.util.concurrent.Callable;
 
@@ -18,7 +18,7 @@ public class GetDocumentMetadataTask implements Callable<String>
 	{
 		//System.out.println("Get document metadata for user " + userID);
 
-		return InazumaStorageManager.getStorageController().getDocumentMetadata(userID);
+		return RequestController.getStorageControllerInstance().getDocumentMetadata(userID);
 	}
 
 	public String getUserID()

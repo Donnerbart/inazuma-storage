@@ -1,6 +1,6 @@
 package request.task;
 
-import inazuma.InazumaStorageManager;
+import request.RequestController;
 
 import java.util.concurrent.Callable;
 
@@ -24,7 +24,7 @@ public class AddDocumentTask implements Callable<Boolean>
 	{
 		//System.out.println("Add document for user " + userID + " with key " + key);
 
-		InazumaStorageManager.getStorageController().addDocumentAsync(userID, key, json, created);
+		RequestController.getStorageControllerInstance().addDocumentAsync(userID, key, json, created);
 
 		return true;
 	}

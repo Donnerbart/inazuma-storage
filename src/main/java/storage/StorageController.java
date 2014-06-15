@@ -3,6 +3,7 @@ package storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.couchbase.client.CouchbaseClient;
+import request.StorageControllerFacade;
 import scala.concurrent.duration.Duration;
 import stats.BasicStatisticValue;
 import stats.CustomStatisticValue;
@@ -12,7 +13,7 @@ import storage.message.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class StorageController
+public class StorageController implements StorageControllerFacade
 {
 	private final StorageDBController storageDBController;
 	private final ActorSystem actorSystem;

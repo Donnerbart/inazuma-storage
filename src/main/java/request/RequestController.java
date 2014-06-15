@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RequestController
 {
 	private static final AtomicReference<RequestController> INSTANCE = new AtomicReference<>(null);
+	private static final AtomicReference<StorageControllerFacade> STORAGE_CONTROLLER_INSTANCE = new AtomicReference<>(null);
 
 	private final IExecutorService es;
 
@@ -28,10 +29,16 @@ public class RequestController
 		return INSTANCE.get();
 	}
 
-	public RequestController(final HazelcastInstance hz)
+	public static StorageControllerFacade getStorageControllerInstance()
+	{
+		return STORAGE_CONTROLLER_INSTANCE.get();
+	}
+
+	public RequestController(final HazelcastInstance hz, final StorageControllerFacade storageController)
 	{
 		this.es = hz.getExecutorService("inazumaExecutor");
 
+		STORAGE_CONTROLLER_INSTANCE.set(storageController);
 		INSTANCE.set(this);
 	}
 
@@ -70,6 +77,7 @@ public class RequestController
 	public void shutdown()
 	{
 		INSTANCE.set(null);
+		STORAGE_CONTROLLER_INSTANCE.set(null);
 	}
 
 	private String getResultFromCallable(final Callable<String> task, final String key)
