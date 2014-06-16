@@ -4,21 +4,24 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.donnerbart</groupId>
     <artifactId>inazuma-storage-client</artifactId>
     <description>Inazuma-Storage is a fast user to JSON document storage based on Hazelcast and Couchbase</description>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
-    <modules>
-        <module>../inazuma-storage-base</module>
-    </modules>
+    <parent>
+        <groupId>de.donnerbart</groupId>
+        <artifactId>inazuma-storage</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
 
     <dependencies>
         <dependency>
+            <groupId>de.donnerbart</groupId>
+            <artifactId>inazuma-storage-base</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
-            <version>3.2.2</version>
         </dependency>
     </dependencies>
 </project>
