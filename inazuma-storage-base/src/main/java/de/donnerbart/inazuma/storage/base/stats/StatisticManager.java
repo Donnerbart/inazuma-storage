@@ -33,6 +33,7 @@ public final class StatisticManager
 	public void shutdown()
 	{
 		running.set(false);
+		statisticValues.clear();
 		collectionThread.interrupt();
 	}
 
