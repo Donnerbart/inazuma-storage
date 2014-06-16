@@ -10,8 +10,14 @@ import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import scala.concurrent.duration.Duration;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class StorageController implements StorageControllerFacade
 {
@@ -20,6 +26,11 @@ public class StorageController implements StorageControllerFacade
 	private final ActorRef storageDispatcher;
 
 	private final AtomicLong queueSize = new AtomicLong(0);
+	private final AtomicReference<CountDownLatch> shutdownLatch = new AtomicReference<>(null);
+
+	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
+	private final Lock shutdownQueueSizeLock = new ReentrantLock();
+	private final Condition shutdownQueueSizeCondition = shutdownQueueSizeLock.newCondition();
 
 	private final BasicStatisticValue documentAdded = new BasicStatisticValue("StorageController", "documentAdded");
 	private final BasicStatisticValue documentFetched = new BasicStatisticValue("StorageController", "documentFetched");
@@ -88,25 +99,58 @@ public class StorageController implements StorageControllerFacade
 	{
 		queueSize.incrementAndGet();
 
-		final BaseCallbackMessageWithKey message = new BaseCallbackMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
+		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
 		storageDispatcher.tell(message, ActorRef.noSender());
 	}
 
 	public void shutdown()
 	{
-		try
+		final long queue = queueSize.get();
+		if (queue > 0)
 		{
-			actorSystem.shutdown();
+			System.out.println("Waiting for queue to get empty (" + queue + ")...");
+			notifyEmptyQueue.set(true);
+
+			shutdownQueueSizeLock.lock();
+			try
+			{
+				shutdownQueueSizeCondition.await();
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+			finally
+			{
+				shutdownQueueSizeLock.unlock();
+			}
 		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+
+		final BaseCallbackMessage<Integer> message = new BaseCallbackMessage<>(MessageType.SHUTDOWN, null);
+		storageDispatcher.tell(message, ActorRef.noSender());
+
+		final int count = message.getCallback().getResult();
+		shutdownLatch.set(new CountDownLatch(count));
+	}
+
+	public void shutdownCountdown()
+	{
+		shutdownLatch.get().countDown();
 	}
 
 	public void awaitShutdown()
 	{
-		actorSystem.awaitTermination(Duration.create(60, TimeUnit.MINUTES));
+		try
+		{
+			shutdownLatch.get().await();
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+
+		actorSystem.shutdown();
+		actorSystem.awaitTermination(Duration.create(10, TimeUnit.SECONDS));
 	}
 
 	long getQueueSize()
@@ -131,7 +175,7 @@ public class StorageController implements StorageControllerFacade
 
 	void incrementMetadataPersisted()
 	{
-		queueSize.decrementAndGet();
+		decrementQueueSize();
 		metadataPersisted.increment();
 	}
 
@@ -142,19 +186,19 @@ public class StorageController implements StorageControllerFacade
 
 	void incrementDocumentPersisted()
 	{
-		queueSize.decrementAndGet();
+		decrementQueueSize();
 		documentPersisted.increment();
 	}
 
 	void incrementDocumentFetched()
 	{
-		queueSize.decrementAndGet();
+		decrementQueueSize();
 		documentFetched.increment();
 	}
 
 	void incrementDataDeleted()
 	{
-		queueSize.decrementAndGet();
+		decrementQueueSize();
 		documentDeleted.increment();
 	}
 
@@ -166,5 +210,22 @@ public class StorageController implements StorageControllerFacade
 	void incrementStorageProcessorDestroyed()
 	{
 		storageProcessorDestroyed.increment();
+	}
+
+	private void decrementQueueSize()
+	{
+		final long queue = queueSize.decrementAndGet();
+		if (notifyEmptyQueue.get() && queue == 0)
+		{
+			shutdownQueueSizeLock.lock();
+			try
+			{
+				shutdownQueueSizeCondition.signal();
+			}
+			finally
+			{
+				shutdownQueueSizeLock.unlock();
+			}
+		}
 	}
 }

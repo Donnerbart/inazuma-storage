@@ -41,6 +41,12 @@ class StorageProcessor extends UntypedActor
 	}
 
 	@Override
+	public void postStop()
+	{
+		storageController.shutdownCountdown();
+	}
+
+	@Override
 	public void onReceive(final Object message) throws Exception
 	{
 		if (message instanceof ReceiveTimeout)
@@ -92,7 +98,7 @@ class StorageProcessor extends UntypedActor
 				}
 				case MARK_DOCUMENT_AS_READ:
 				{
-					processMarkDocumentAsRead((BaseCallbackMessageWithKey) baseMessage);
+					processMarkDocumentAsRead((BaseMessageWithKey) baseMessage);
 					break;
 				}
 				default:
@@ -240,7 +246,7 @@ class StorageProcessor extends UntypedActor
 		storageController.incrementDataDeleted();
 	}
 
-	private void processMarkDocumentAsRead(final BaseCallbackMessageWithKey baseMessage)
+	private void processMarkDocumentAsRead(final BaseMessageWithKey baseMessage)
 	{
 		documentMetadataMap.get(baseMessage.getKey()).setRead(true);
 
