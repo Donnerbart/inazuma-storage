@@ -44,6 +44,7 @@ public class StorageController implements StorageControllerFacade
 		StatisticManager.getInstance().registerStatisticValue(queueSize);
 	}
 
+	@Override
 	public String getDocumentMetadata(final String userID)
 	{
 		final BaseCallbackMessage<String> message = new BaseCallbackMessage<>(MessageType.FETCH_DOCUMENT_METADATA, userID);
@@ -52,6 +53,7 @@ public class StorageController implements StorageControllerFacade
 		return message.getCallback().getResult();
 	}
 
+	@Override
 	public void addDocumentAsync(final String userID, final String key, final String json, final long created)
 	{
 		queueSize.incrementAndGet();
@@ -61,6 +63,7 @@ public class StorageController implements StorageControllerFacade
 		storageDispatcher.tell(message, ActorRef.noSender());
 	}
 
+	@Override
 	public String getDocument(final String userID, final String key)
 	{
 		queueSize.incrementAndGet();
@@ -71,11 +74,21 @@ public class StorageController implements StorageControllerFacade
 		return message.getCallback().getResult();
 	}
 
+	@Override
 	public void deleteDocumentAsync(final String userID, final String key)
 	{
 		queueSize.incrementAndGet();
 
 		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.DELETE_DOCUMENT, userID, key);
+		storageDispatcher.tell(message, ActorRef.noSender());
+	}
+
+	@Override
+	public void markDocumentAsReadAsync(final String userID, final String key)
+	{
+		queueSize.incrementAndGet();
+
+		final BaseCallbackMessageWithKey message = new BaseCallbackMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
 		storageDispatcher.tell(message, ActorRef.noSender());
 	}
 

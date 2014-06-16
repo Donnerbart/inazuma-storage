@@ -87,6 +87,12 @@ public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrappe
 		RequestController.getInstance().deleteDocument(userID, key);
 	}
 
+	@Override
+	public void markDocumentAsRead(final String userID, final String key)
+	{
+		RequestController.getInstance().markDocumentAsRead(userID, key);
+	}
+
 	private int createRandomUserID()
 	{
 		return generator.nextInt(MAX_USER) + 1;

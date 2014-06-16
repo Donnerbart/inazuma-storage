@@ -18,4 +18,6 @@ public interface InazumaStorageRequestWrapperMBean
 	public String returnDocument(String userID, String key);
 
 	void deleteDocument(String userID, String key);
+
+	void markDocumentAsRead(String userID, String key);
 }

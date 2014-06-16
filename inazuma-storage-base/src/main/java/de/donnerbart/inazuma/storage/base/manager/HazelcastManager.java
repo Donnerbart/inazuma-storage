@@ -7,14 +7,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import de.donnerbart.inazuma.storage.base.request.serialization.AddDocumentTaskStreamSerializer;
-import de.donnerbart.inazuma.storage.base.request.serialization.DeleteDocumentTaskStreamSerializer;
-import de.donnerbart.inazuma.storage.base.request.serialization.GetDocumentMetadataTaskStreamSerializer;
-import de.donnerbart.inazuma.storage.base.request.serialization.GetDocumentTaskStreamSerializer;
-import de.donnerbart.inazuma.storage.base.request.task.AddDocumentTask;
-import de.donnerbart.inazuma.storage.base.request.task.DeleteDocumentTask;
-import de.donnerbart.inazuma.storage.base.request.task.GetDocumentMetadataTask;
-import de.donnerbart.inazuma.storage.base.request.task.GetDocumentTask;
+import de.donnerbart.inazuma.storage.base.request.serialization.*;
+import de.donnerbart.inazuma.storage.base.request.task.*;
 
 public class HazelcastManager
 {
@@ -48,10 +42,15 @@ public class HazelcastManager
 		final SerializerConfig getDocumentMetadataConfig = new SerializerConfig();
 		getDocumentMetadataConfig.setImplementation(new GetDocumentMetadataTaskStreamSerializer()).setTypeClass(GetDocumentMetadataTask.class);
 
+		final SerializerConfig markDocumentAsReadConfig = new SerializerConfig();
+		markDocumentAsReadConfig.setImplementation(new MarkDocumentAsReadTaskStreamSerializer()).setTypeClass(MarkDocumentAsReadTask.class);
+
 		cfg
 				.addSerializerConfig(addDocumentConfig)
 				.addSerializerConfig(deleteDocumentConfig)
 				.addSerializerConfig(getDocumentConfig)
-				.addSerializerConfig(getDocumentMetadataConfig);
+				.addSerializerConfig(getDocumentMetadataConfig)
+				.addSerializerConfig(markDocumentAsReadConfig)
+		;
 	}
 }

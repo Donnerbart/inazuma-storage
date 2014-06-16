@@ -2,10 +2,7 @@ package de.donnerbart.inazuma.storage.base.request;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import de.donnerbart.inazuma.storage.base.request.task.AddDocumentTask;
-import de.donnerbart.inazuma.storage.base.request.task.DeleteDocumentTask;
-import de.donnerbart.inazuma.storage.base.request.task.GetDocumentMetadataTask;
-import de.donnerbart.inazuma.storage.base.request.task.GetDocumentTask;
+import de.donnerbart.inazuma.storage.base.request.task.*;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 
 import java.util.concurrent.Callable;
@@ -71,6 +68,12 @@ public class RequestController
 		documentDeleteRequest.increment();
 
 		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key);
+		es.submitToKeyOwner(task, userID);
+	}
+
+	public void markDocumentAsRead(final String userID, final String key)
+	{
+		final MarkDocumentAsReadTask task = new MarkDocumentAsReadTask(userID, key);
 		es.submitToKeyOwner(task, userID);
 	}
 

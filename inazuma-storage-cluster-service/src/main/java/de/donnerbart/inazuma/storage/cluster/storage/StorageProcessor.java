@@ -90,6 +90,11 @@ class StorageProcessor extends UntypedActor
 					processFetchDocumentMetadata(baseMessage);
 					break;
 				}
+				case MARK_DOCUMENT_AS_READ:
+				{
+					processMarkDocumentAsRead((BaseCallbackMessageWithKey) baseMessage);
+					break;
+				}
 				default:
 				{
 					unhandled(message);
@@ -233,5 +238,12 @@ class StorageProcessor extends UntypedActor
 		}
 
 		storageController.incrementDataDeleted();
+	}
+
+	private void processMarkDocumentAsRead(final BaseCallbackMessageWithKey baseMessage)
+	{
+		documentMetadataMap.get(baseMessage.getKey()).setRead(true);
+
+		context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 	}
 }
