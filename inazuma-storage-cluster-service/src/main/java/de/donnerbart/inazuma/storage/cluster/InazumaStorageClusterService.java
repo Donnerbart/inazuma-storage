@@ -49,12 +49,12 @@ public class InazumaStorageClusterService
 		{
 			System.out.println("Received shutdown signal!");
 
-			// Shutdown request storage
+			// Shutdown RequestController
 			System.out.println("Shutting down RequestController...");
 			RequestController.getInstance().shutdown();
 			System.out.println("Done!\n");
 
-			// Shutdown storage threads
+			// Shutdown StorageController
 			System.out.println("Shutting down StorageController...");
 			final StorageController storageController = storageControllerReference.get();
 			if (storageController != null)
