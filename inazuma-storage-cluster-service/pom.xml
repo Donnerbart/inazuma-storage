@@ -8,6 +8,11 @@
     <artifactId>inazuma-storage-cluster-service</artifactId>
     <description>Inazuma-Storage is a fast user to JSON document storage based on Hazelcast and Couchbase</description>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>../inazuma-storage-base</module>
+    </modules>
 
     <dependencies>
         <dependency>

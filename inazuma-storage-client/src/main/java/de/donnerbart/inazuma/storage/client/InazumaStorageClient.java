@@ -1,24 +1,25 @@
-package de.donnerbart.inazuma.storage.client.inazuma;
+package de.donnerbart.inazuma.storage.client;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 
 import java.util.concurrent.CountDownLatch;
 
-public class InazumaStorageClientManager
+public class InazumaStorageClient
 {
 	private static final CountDownLatch latch = new CountDownLatch(1);
 
 	public static CountDownLatch start()
 	{
 		// Get Hazelcast instance
-		final HazelcastInstance hz = HazelcastClientManager.getInstance();
+		final HazelcastInstance hz = HazelcastManager.getClientInstance();
 
 		// Start JMX agent
-		new JMXAgent("de.donnerbart", "InazumaStorageClient");
+		new JMXAgent("de.donnerbart", "inazuma.storage.client");
 
 		// Startup request controller
 		new RequestController(hz, null);

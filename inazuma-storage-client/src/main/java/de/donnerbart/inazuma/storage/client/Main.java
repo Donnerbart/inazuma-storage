@@ -1,6 +1,4 @@
-package de.donnerbart.inazuma.storage.client.main;
-
-import de.donnerbart.inazuma.storage.client.inazuma.InazumaStorageClientManager;
+package de.donnerbart.inazuma.storage.client;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -8,7 +6,7 @@ public class Main
 {
 	public static void main(final String[] args)
 	{
-		final CountDownLatch latch = InazumaStorageClientManager.start();
+		final CountDownLatch latch = InazumaStorageClient.start();
 
 		// Wait for shutdown hook
 		System.out.println("Inazuma-Storage-Client is running...");

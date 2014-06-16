@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.base.inazuma;
+package de.donnerbart.inazuma.storage.base.manager;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactory;
