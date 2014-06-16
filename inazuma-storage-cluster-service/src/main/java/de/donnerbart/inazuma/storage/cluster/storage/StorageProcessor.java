@@ -117,11 +117,16 @@ class StorageProcessor extends UntypedActor
 	{
 		context().system().scheduler().scheduleOnce(
 				Duration.create(DELAY, DELAY_UNIT),
-				context().parent(),
+				self(),
 				message,
 				context().system().dispatcher(),
 				self()
 		);
+	}
+
+	private void sendPersistDocumentMetadataMessage()
+	{
+		self().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 	}
 
 	private void processReceivedTimeout()
@@ -155,7 +160,7 @@ class StorageProcessor extends UntypedActor
 		{
 			log.error("Could not create document metadata for user {}: {}", userID, e.getMessage());
 
-			context().parent().tell(message, getSelf());
+			sendDelayedMessage(message);
 		}
 	}
 
@@ -204,15 +209,18 @@ class StorageProcessor extends UntypedActor
 
 		final DocumentMetadata documentMetadata = new DocumentMetadata(message);
 		documentMetadataMap.put(message.getKey(), documentMetadata);
-		storageController.incrementDocumentPersisted();
 
 		if (!persistDocumentMetadataMessageInQueue)
 		{
 			persistDocumentMetadataMessageInQueue = true;
 
 			storageController.incrementQueueSize();
-			context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+			sendPersistDocumentMetadataMessage();
 		}
+
+		// We have to decrement the queue size AFTER we added a possible retry message
+		// Otherwise the queueSize could drop to 0 and the system continues with shutdown
+		storageController.incrementDocumentPersisted();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -231,7 +239,7 @@ class StorageProcessor extends UntypedActor
 			storageController.getStorageDBController().deleteDocument(message.getKey());
 			documentMetadataMap.remove(message.getKey());
 
-			context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+			sendPersistDocumentMetadataMessage();
 		}
 		catch (Exception e)
 		{
@@ -250,6 +258,6 @@ class StorageProcessor extends UntypedActor
 	{
 		documentMetadataMap.get(baseMessage.getKey()).setRead(true);
 
-		context().parent().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+		sendPersistDocumentMetadataMessage();
 	}
 }
