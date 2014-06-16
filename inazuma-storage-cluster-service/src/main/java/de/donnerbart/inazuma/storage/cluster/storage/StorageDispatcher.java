@@ -3,8 +3,6 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
-import akka.event.Logging;
-import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseCallbackMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
 
@@ -16,7 +14,6 @@ class StorageDispatcher extends UntypedActor
 	private final StorageController storageController;
 
 	private final ConcurrentMap<String, ActorRef> storageProcessorByUserID = new ConcurrentHashMap<>();
-	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
 	private boolean running = true;
 
@@ -39,6 +36,16 @@ class StorageDispatcher extends UntypedActor
 			final BaseMessage baseMessage = (BaseMessage) message;
 			switch (baseMessage.getType())
 			{
+				case ADD_DOCUMENT:
+				case FETCH_DOCUMENT:
+				case DELETE_DOCUMENT:
+				case LOAD_DOCUMENT_METADATA:
+				case FETCH_DOCUMENT_METADATA:
+				case PERSIST_DOCUMENT_METADATA:
+				{
+					findOrCreateProcessorFor(baseMessage.getUserID()).tell(message, self());
+					break;
+				}
 				case STORAGE_PROCESSOR_IDLE:
 				{
 					storageProcessorByUserID.remove(baseMessage.getUserID());
@@ -48,16 +55,6 @@ class StorageDispatcher extends UntypedActor
 				case SHUTDOWN:
 				{
 					initShutdown(baseMessage);
-					break;
-				}
-				case DELETE_DOCUMENT:
-				case FETCH_DOCUMENT:
-				case FETCH_DOCUMENT_METADATA:
-				case LOAD_DOCUMENT_METADATA:
-				case ADD_DOCUMENT:
-				case PERSIST_DOCUMENT_METADATA:
-				{
-					findOrCreateProcessorFor(baseMessage.getUserID()).tell(message, self());
 					break;
 				}
 				default:
@@ -91,9 +88,8 @@ class StorageDispatcher extends UntypedActor
 	{
 		running = false;
 
-		final int numberOfChildren = storageProcessorByUserID.size();
-		((BaseCallbackMessage<Integer>) message).setResult(numberOfChildren + 1);
-		log.info("Killing {} instance(s) of StorageProcessor...", numberOfChildren);
+		storageController.setShutdownCountdown(storageProcessorByUserID.size() + 1);
+		((BaseCallbackMessage<Object>) message).getCallback().setResult(null);
 
 		for (final String userID : storageProcessorByUserID.keySet())
 		{

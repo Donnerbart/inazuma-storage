@@ -126,16 +126,25 @@ public class StorageController implements StorageControllerFacade
 			}
 		}
 
-		final BaseCallbackMessage<Integer> message = new BaseCallbackMessage<>(MessageType.SHUTDOWN, null);
+		BaseCallbackMessage<Object> message = new BaseCallbackMessage<>(MessageType.SHUTDOWN, null);
 		storageDispatcher.tell(message, ActorRef.noSender());
 
-		final int count = message.getCallback().getResult();
-		shutdownLatch.set(new CountDownLatch(count));
+		message.getCallback().getResult();
+	}
+
+	public void setShutdownCountdown(final int numberOfActors)
+	{
+		System.out.println("Killing " + numberOfActors + " running actor(s)...");
+		shutdownLatch.set(new CountDownLatch(numberOfActors));
 	}
 
 	public void shutdownCountdown()
 	{
-		shutdownLatch.get().countDown();
+		final CountDownLatch latch = shutdownLatch.get();
+		if (latch != null)
+		{
+			latch.countDown();
+		}
 	}
 
 	public void awaitShutdown()
