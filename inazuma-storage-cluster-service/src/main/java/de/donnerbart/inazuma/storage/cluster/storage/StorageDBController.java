@@ -21,14 +21,12 @@ class StorageDBController
 
 	public void storeDocumentMetadata(final String userID, final String document) throws ExecutionException, InterruptedException
 	{
-		final OperationFuture<Boolean> future = cb.set(createDocumentMetadataKey(userID), 0, document);
-		future.get();
+		handleOperationFuture(cb.set(createDocumentMetadataKey(userID), 0, document));
 	}
 
 	public void storeDocument(final String key, final String document) throws ExecutionException, InterruptedException
 	{
-		final OperationFuture<Boolean> future = cb.set(key, 0, document);
-		future.get();
+		handleOperationFuture(cb.set(key, 0, document));
 	}
 
 	public String getDocument(final String key)
@@ -38,8 +36,15 @@ class StorageDBController
 
 	public void deleteDocument(final String key) throws ExecutionException, InterruptedException
 	{
-		final OperationFuture<Boolean> future = cb.delete(key);
-		future.get();
+		handleOperationFuture(cb.delete(key));
+	}
+
+	private void handleOperationFuture(final OperationFuture<Boolean> future) throws ExecutionException, InterruptedException
+	{
+		if (!future.get())
+		{
+			throw new RuntimeException("Got negative result from database operation!");
+		}
 	}
 
 	private String createDocumentMetadataKey(final String userID)
