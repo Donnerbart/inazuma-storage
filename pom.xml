@@ -8,42 +8,17 @@
     <artifactId>inazuma-storage</artifactId>
     <description>Inazuma-Storage is a fast user to JSON document storage based on Hazelcast and Couchbase</description>
     <version>0.0.2-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>3.2.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>couchbase-client</artifactId>
-            <version>1.4.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.carrotsearch</groupId>
-            <artifactId>hppc</artifactId>
-            <version>0.6.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.10</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>inazuma-storage-base</module>
+        <module>inazuma-storage-client</module>
+        <module>inazuma-storage-cluster-service</module>
+    </modules>
 
-    <repositories>
-        <repository>
-            <id>akka-snapshots</id>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <url>http://repo.akka.io/snapshots/</url>
-        </repository>
-    </repositories>
+    <scm>
+        <connection>scm:git:git://github.com/donnerbart/inazuma-storage.git</connection>
+        <developerConnection>scm:git:git@github.com:donnerbart/inazuma-storage.git</developerConnection>
+        <url>https://github.com/donnerbart/inazuma-storage/</url>
+    </scm>
 </project>
