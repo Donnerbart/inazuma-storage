@@ -2,7 +2,7 @@ package de.donnerbart.inazuma.storage.base.request;
 
 public interface StorageControllerFacade
 {
-	public String getDocumentMetadata( String userID);
+	public String getDocumentMetadata(String userID);
 
 	public void addDocumentAsync(String userID, String key, String json, long created);
 
