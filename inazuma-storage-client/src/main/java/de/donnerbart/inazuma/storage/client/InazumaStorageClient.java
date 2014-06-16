@@ -2,8 +2,8 @@ package de.donnerbart.inazuma.storage.client;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
+import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 
