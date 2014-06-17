@@ -141,7 +141,6 @@ public class MessageProcessor extends UntypedActor
 			if (documentMetadataJSON != null)
 			{
 				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(documentMetadataJSON);
-
 				if (documentMetadataMap == null)
 				{
 					throw new RuntimeException("Document metadata for user " + userID + " is null! " + documentMetadataJSON);
@@ -152,7 +151,7 @@ public class MessageProcessor extends UntypedActor
 		}
 		catch (Exception e)
 		{
-			log.error("Could not create document metadata for user {}: {}", userID, e.getMessage());
+			log.debug("Could not create document metadata for user {}: {}", userID, e.getMessage());
 
 			sendDelayedMessage(message);
 		}
@@ -168,7 +167,7 @@ public class MessageProcessor extends UntypedActor
 		}
 		catch (Exception e)
 		{
-			log.error("Could not store document metadata for user {}: {}", userID, e.getMessage());
+			log.debug("Could not store document metadata for user {}: {}", userID, e.getMessage());
 
 			storageController.incrementMetadataRetries();
 			sendDelayedMessage(message);
@@ -193,7 +192,7 @@ public class MessageProcessor extends UntypedActor
 		}
 		catch (Exception e)
 		{
-			log.error("Could not add {} for user {}: {}", message.getKey(), userID, e.getMessage());
+			log.debug("Could not add {} for user {}: {}", message.getKey(), userID, e.getMessage());
 
 			storageController.incrementDocumentRetries();
 			sendDelayedMessage(message);
@@ -237,7 +236,7 @@ public class MessageProcessor extends UntypedActor
 		}
 		catch (Exception e)
 		{
-			log.error("Could not delete document {} for user {}: {}", message.getKey(), userID, e.getMessage());
+			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e.getMessage());
 
 			storageController.incrementDocumentRetries();
 			sendDelayedMessage(message);

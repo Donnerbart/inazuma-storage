@@ -21,7 +21,7 @@ class DeadLetterListener extends UntypedActor
 			if (!(deadMessage instanceof Terminate) && !(deadMessage instanceof PoisonPill))
 			{
 				log.error("Received dead letter {} for actor {}", deadLetter.message(), deadLetter.recipient());
-				throw new RuntimeException("Received dead letter " + deadLetter.message() + " for actor " + deadLetter.recipient());
+				//throw new RuntimeException("Received dead letter " + deadLetter.message() + " for actor " + deadLetter.recipient());
 			}
 		}
 	}
