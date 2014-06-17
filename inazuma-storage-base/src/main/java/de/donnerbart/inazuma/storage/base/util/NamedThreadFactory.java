@@ -1,5 +1,7 @@
 package de.donnerbart.inazuma.storage.base.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +21,7 @@ public class NamedThreadFactory implements ThreadFactory
 	}
 
 	@Override
-	public Thread newThread(final Runnable runnable)
+	public Thread newThread(@NotNull final Runnable runnable)
 	{
 		Thread.setDefaultUncaughtExceptionHandler(UNCAUGHT_EXCEPTION_HANDLER);
 		return new Thread(group, runnable, namePrefix + "-thread-" + threadNumber.getAndIncrement(), 0);

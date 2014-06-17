@@ -16,6 +16,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>de.donnerbart</groupId>
             <artifactId>inazuma-storage-base</artifactId>
         </dependency>
