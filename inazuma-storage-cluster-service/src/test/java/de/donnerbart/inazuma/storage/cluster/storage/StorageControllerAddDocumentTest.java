@@ -91,7 +91,7 @@ public class StorageControllerAddDocumentTest
 		StatisticManager.getInstance().shutdown();
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addFirstDocument()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -108,7 +108,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addSecondDocumentAfterFirstDocumentIsAlreadyPersisted()
 	{
 		when(client.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
@@ -125,7 +125,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addSameDocumentTwice()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -143,7 +143,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addSingleDocumentWithExceptionOnFirstDatabaseSet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenThrow(new IllegalStateException()).thenReturn(futureTrue);
@@ -160,7 +160,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addSingleDocumentWithFailureOnFirstDatabaseSet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureFalse).thenReturn(futureTrue);
@@ -177,7 +177,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void persistDocumentMetadataWithExceptionOnFirstDatabaseSet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -194,7 +194,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void persistDocumentMetadataWithFailureOnFirstDatabaseSet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -211,7 +211,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void persistDocumentMetadataWithFailureOnFirstAndSecondDatabaseSet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -228,7 +228,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromSameUser()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -248,7 +248,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromDifferentUser()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
@@ -272,7 +272,7 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(client);
 	}
 
-	@Test(timeOut = 1000)
+	@Test
 	public void getDocumentMetadataExceptionOnFirstDatabaseGet()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
