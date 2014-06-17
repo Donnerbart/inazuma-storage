@@ -4,7 +4,7 @@
 <suite name="Suite" parallel="false">
     <test name="StorageController">
         <classes>
-            <class name="de.donnerbart.inazuma.storage.cluster.storage.StorageControllerTest"/>
+            <class name="de.donnerbart.inazuma.storage.cluster.storage.StorageControllerAddDocumentTest"/>
         </classes>
     </test>
 </suite>

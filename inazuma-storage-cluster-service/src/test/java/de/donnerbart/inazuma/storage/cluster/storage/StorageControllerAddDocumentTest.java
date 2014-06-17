@@ -3,8 +3,8 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import com.couchbase.client.CouchbaseClient;
 import com.hazelcast.core.OperationTimeoutException;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import net.spy.memcached.internal.OperationFuture;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
-public class StorageControllerTest
+public class StorageControllerAddDocumentTest
 {
 	private final static String ANY_USER_1 = "1000000";
 	private final static String ANY_USER_2 = "2000000";
@@ -65,23 +65,24 @@ public class StorageControllerTest
 		DOCUMENT_METADATA_JSON_3 = GsonWrapper.toJson(documentMetadataMap3);
 	}
 
-	private CouchbaseClient client;
-	private StorageController storageController;
-
 	@Mock
 	private final OperationFuture<Boolean> futureTrue = null;
 	@Mock
 	private final OperationFuture<Boolean> futureFalse = null;
+	@Mock
+	private final CouchbaseClient client = null;
+
+	private StorageController storageController;
 
 	@BeforeMethod
 	public void setUp() throws Exception
 	{
-		client = mock(CouchbaseClient.class);
-		storageController = new StorageController(client);
-
 		MockitoAnnotations.initMocks(this);
+
 		when(futureTrue.get()).thenReturn(true);
 		when(futureFalse.get()).thenReturn(false);
+
+		storageController = new StorageController(client);
 	}
 
 	@AfterMethod
@@ -91,7 +92,7 @@ public class StorageControllerTest
 	}
 
 	@Test(timeOut = 1000)
-	public void addFirstDocumentForUser()
+	public void addFirstDocument()
 	{
 		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
 		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
