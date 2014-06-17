@@ -30,30 +30,46 @@ public class InazumaStorageClient
 		return latch;
 	}
 
+	@SuppressWarnings("unused")
+	public static void shutdown()
+	{
+		stop();
+	}
+
+	private static void stop()
+	{
+		if (RequestController.getInstance() == null)
+		{
+			return;
+		}
+
+		System.out.println("Received shutdown signal!");
+
+		// Shutdown request storage
+		System.out.println("Shutting down RequestController...");
+		RequestController.getInstance().shutdown();
+		System.out.println("Done!\n");
+
+		// Shutdown of Hazelcast instance
+		System.out.println("Shutting down Hazelcast instance...");
+		Hazelcast.shutdownAll();
+		System.out.println("Done!\n");
+
+		// Shutdown of StatisticManager
+		System.out.println("Shutting down StatisticManager...");
+		StatisticManager.getInstance().shutdown();
+		System.out.println("Done!\n");
+
+		// Release main thread
+		latch.countDown();
+	}
+
 	private static class HazelcastShutdownHook implements Runnable
 	{
 		@Override
 		public void run()
 		{
-			System.out.println("Received shutdown signal!");
-
-			// Shutdown request storage
-			System.out.println("Shutting down RequestController...");
-			RequestController.getInstance().shutdown();
-			System.out.println("Done!\n");
-
-			// Shutdown of Hazelcast instance
-			System.out.println("Shutting down Hazelcast instance...");
-			Hazelcast.shutdownAll();
-			System.out.println("Done!\n");
-
-			// Shutdown of StatisticManager
-			System.out.println("Shutting down StatisticManager...");
-			StatisticManager.getInstance().shutdown();
-			System.out.println("Done!\n");
-
-			// Release main thread
-			latch.countDown();
+			stop();
 		}
 	}
 }
