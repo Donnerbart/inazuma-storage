@@ -1,10 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage.message;
 
-import com.hazelcast.core.PartitionAware;
-
-import java.io.Serializable;
-
-public class BaseMessage implements PartitionAware, Serializable
+public class BaseMessage
 {
 	private final MessageType type;
 	private final String userID;
@@ -21,12 +17,6 @@ public class BaseMessage implements PartitionAware, Serializable
 	}
 
 	public String getUserID()
-	{
-		return userID;
-	}
-
-	@Override
-	public Object getPartitionKey()
 	{
 		return userID;
 	}

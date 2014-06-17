@@ -1,13 +1,12 @@
 package de.donnerbart.inazuma.storage.cluster.storage.callback;
 
-import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class BlockingCallback<T> implements Serializable
+public class BlockingCallback<T>
 {
 	private final AtomicReference<T> result = new AtomicReference<>(null);
 	private final Lock lock = new ReentrantLock();
