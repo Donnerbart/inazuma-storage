@@ -41,6 +41,7 @@ public class StorageControllerTest
 
 	private final static String DOCUMENT_METADATA_JSON_1;
 	private final static String DOCUMENT_METADATA_JSON_1_AND_2;
+	private final static String DOCUMENT_METADATA_JSON_2_AFTER_1;
 	private final static String DOCUMENT_METADATA_JSON_3;
 
 	static
@@ -49,11 +50,14 @@ public class StorageControllerTest
 		documentMetadataMap1.put(DOCUMENT_1_KEY, DOCUMENT_1_METADATA);
 		DOCUMENT_METADATA_JSON_1 = StorageJsonController.toJson(documentMetadataMap1);
 
-
 		final Map<String, DocumentMetadata> documentMetadataMap2 = new HashMap<>();
 		documentMetadataMap2.put(DOCUMENT_1_KEY, DOCUMENT_1_METADATA);
 		documentMetadataMap2.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
 		DOCUMENT_METADATA_JSON_1_AND_2 = StorageJsonController.toJson(documentMetadataMap2);
+
+		final Map<String, DocumentMetadata> documentMetadataMap = StorageJsonController.getDocumentMetadataMap(DOCUMENT_METADATA_JSON_1);
+		documentMetadataMap.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
+		DOCUMENT_METADATA_JSON_2_AFTER_1 = StorageJsonController.toJson(documentMetadataMap);
 
 		final Map<String, DocumentMetadata> documentMetadataMap3 = new HashMap<>();
 		documentMetadataMap3.put(DOCUMENT_3_KEY, DOCUMENT_3_METADATA);
@@ -105,13 +109,9 @@ public class StorageControllerTest
 	@Test(timeOut = 1000)
 	public void addSecondDocumentAfterFirstDocumentIsAlreadyPersisted()
 	{
-		final Map<String, DocumentMetadata> documentMetadataMap = StorageJsonController.getDocumentMetadataMap(DOCUMENT_METADATA_JSON_1);
-		documentMetadataMap.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
-		final String documentMetadata = StorageJsonController.toJson(documentMetadataMap);
-
 		when(client.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
 		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DOCUMENT_METADATA_JSON_1);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, documentMetadata)).thenReturn(futureTrue);
+		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
@@ -119,7 +119,7 @@ public class StorageControllerTest
 
 		verify(client).set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON);
 		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, documentMetadata);
+		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1);
 		verifyZeroInteractions(client);
 	}
 
