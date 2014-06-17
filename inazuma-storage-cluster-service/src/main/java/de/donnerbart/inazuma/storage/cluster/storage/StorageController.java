@@ -2,12 +2,16 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.DeadLetter;
 import com.couchbase.client.CouchbaseClient;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
+import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
+import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
 import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.CountDownLatch;
@@ -15,22 +19,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class StorageController implements StorageControllerFacade
+public class StorageController implements StorageControllerFacade, StorageControllerInternalFacade
 {
-	private final StorageDBController storageDBController;
+	private final CouchbaseWrapper couchbaseWrapper;
 	private final ActorSystem actorSystem;
-	private final ActorRef storageDispatcher;
+	private final ActorRef messageDispatcher;
 
 	private final AtomicLong queueSize = new AtomicLong(0);
 	private final AtomicReference<CountDownLatch> shutdownLatch = new AtomicReference<>(null);
 
 	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
-	private final Lock shutdownQueueSizeLock = new ReentrantLock();
-	private final Condition shutdownQueueSizeCondition = shutdownQueueSizeLock.newCondition();
+	private final AtomicReference<BlockingCallback<Object>> callbackEmptyQueue = new AtomicReference<>(new BlockingCallback<>());
 
 	private final BasicStatisticValue documentAdded = new BasicStatisticValue("StorageController", "documentAdded");
 	private final BasicStatisticValue documentFetched = new BasicStatisticValue("StorageController", "documentFetched");
@@ -42,24 +42,23 @@ public class StorageController implements StorageControllerFacade
 	private final BasicStatisticValue documentRetries = new BasicStatisticValue("StorageController", "retriesDocument");
 	private final BasicStatisticValue documentPersisted = new BasicStatisticValue("StorageController", "persistedDocument");
 
-	private final BasicStatisticValue storageProcessorCreated = new BasicStatisticValue("StorageController", "processorsCreated");
-	private final BasicStatisticValue storageProcessorDestroyed = new BasicStatisticValue("StorageController", "processorsDestroyed");
-
 	public StorageController(final CouchbaseClient cb)
 	{
-		this.actorSystem = ActorSystem.create("InazumaStorage");
-		this.storageDispatcher = StorageActorFactory.createStorageDispatcher(actorSystem, this);
-		this.storageDBController = new StorageDBController(cb);
+		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
+		this.messageDispatcher = ActorFactory.createMessageDispatcher(actorSystem, this);
+		this.couchbaseWrapper = new CouchbaseWrapper(cb);
 
 		final CustomStatisticValue queueSize = new CustomStatisticValue<>("StorageController", "queueSize", new StorageQueueSizeCollector(this));
 		StatisticManager.getInstance().registerStatisticValue(queueSize);
+
+		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
 	}
 
 	@Override
 	public String getDocumentMetadata(final String userID)
 	{
 		final BaseCallbackMessage<String> message = new BaseCallbackMessage<>(MessageType.FETCH_DOCUMENT_METADATA, userID);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 
 		return message.getCallback().getResult();
 	}
@@ -71,7 +70,7 @@ public class StorageController implements StorageControllerFacade
 		documentAdded.increment();
 
 		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 	}
 
 	@Override
@@ -80,7 +79,7 @@ public class StorageController implements StorageControllerFacade
 		queueSize.incrementAndGet();
 
 		final BaseCallbackMessageWithKey<String> message = new BaseCallbackMessageWithKey<>(MessageType.FETCH_DOCUMENT, userID, key);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 
 		return message.getCallback().getResult();
 	}
@@ -91,7 +90,7 @@ public class StorageController implements StorageControllerFacade
 		queueSize.incrementAndGet();
 
 		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.DELETE_DOCUMENT, userID, key);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 	}
 
 	@Override
@@ -100,9 +99,10 @@ public class StorageController implements StorageControllerFacade
 		queueSize.incrementAndGet();
 
 		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 	}
 
+	@Override
 	public void shutdown()
 	{
 		final long queue = queueSize.get();
@@ -110,24 +110,11 @@ public class StorageController implements StorageControllerFacade
 		{
 			System.out.println("Waiting for queue to get empty (" + queue + ")...");
 			notifyEmptyQueue.set(true);
-
-			shutdownQueueSizeLock.lock();
-			try
-			{
-				shutdownQueueSizeCondition.await();
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-			}
-			finally
-			{
-				shutdownQueueSizeLock.unlock();
-			}
+			callbackEmptyQueue.get().getResult();
 		}
 
 		BaseCallbackMessage<Object> message = new BaseCallbackMessage<>(MessageType.SHUTDOWN, null);
-		storageDispatcher.tell(message, ActorRef.noSender());
+		messageDispatcher.tell(message, ActorRef.noSender());
 
 		message.getCallback().getResult();
 	}
@@ -138,6 +125,7 @@ public class StorageController implements StorageControllerFacade
 		shutdownLatch.set(new CountDownLatch(numberOfActors));
 	}
 
+	@Override
 	public void shutdownCountdown()
 	{
 		final CountDownLatch latch = shutdownLatch.get();
@@ -147,6 +135,7 @@ public class StorageController implements StorageControllerFacade
 		}
 	}
 
+	@Override
 	public void awaitShutdown()
 	{
 		try
@@ -162,63 +151,61 @@ public class StorageController implements StorageControllerFacade
 		actorSystem.awaitTermination(Duration.create(10, TimeUnit.SECONDS));
 	}
 
-	long getQueueSize()
+	@Override
+	public CouchbaseWrapper getCouchbaseWrapper()
 	{
-		return queueSize.get();
+		return couchbaseWrapper;
 	}
 
-	StorageDBController getStorageDBController()
-	{
-		return storageDBController;
-	}
-
-	void incrementQueueSize()
+	@Override
+	public void incrementQueueSize()
 	{
 		queueSize.incrementAndGet();
 	}
 
-	void incrementMetadataRetries()
+	@Override
+	public void incrementMetadataRetries()
 	{
 		metadataRetries.increment();
 	}
 
-	void incrementMetadataPersisted()
+	@Override
+	public void incrementMetadataPersisted()
 	{
 		decrementQueueSize();
 		metadataPersisted.increment();
 	}
 
-	void incrementDocumentRetries()
+	@Override
+	public void incrementDocumentRetries()
 	{
 		documentRetries.increment();
 	}
 
-	void incrementDocumentPersisted()
+	@Override
+	public void incrementDocumentPersisted()
 	{
 		decrementQueueSize();
 		documentPersisted.increment();
 	}
 
-	void incrementDocumentFetched()
+	@Override
+	public void incrementDocumentFetched()
 	{
 		decrementQueueSize();
 		documentFetched.increment();
 	}
 
-	void incrementDataDeleted()
+	@Override
+	public void incrementDataDeleted()
 	{
 		decrementQueueSize();
 		documentDeleted.increment();
 	}
 
-	void incrementStorageProcessorCreated()
+	long getQueueSize()
 	{
-		storageProcessorCreated.increment();
-	}
-
-	void incrementStorageProcessorDestroyed()
-	{
-		storageProcessorDestroyed.increment();
+		return queueSize.get();
 	}
 
 	private void decrementQueueSize()
@@ -226,15 +213,7 @@ public class StorageController implements StorageControllerFacade
 		final long queue = queueSize.decrementAndGet();
 		if (notifyEmptyQueue.get() && queue == 0)
 		{
-			shutdownQueueSizeLock.lock();
-			try
-			{
-				shutdownQueueSizeCondition.signal();
-			}
-			finally
-			{
-				shutdownQueueSizeLock.unlock();
-			}
+			callbackEmptyQueue.get().setResult(null);
 		}
 	}
 }

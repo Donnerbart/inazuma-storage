@@ -1,9 +1,11 @@
-package de.donnerbart.inazuma.storage.cluster.storage;
+package de.donnerbart.inazuma.storage.cluster.storage.actor;
 
 import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
 import scala.concurrent.duration.Duration;
@@ -12,12 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-class StorageProcessor extends UntypedActor
+public class MessageProcessor extends UntypedActor
 {
 	private static final long DELAY = 50;
 	private static final TimeUnit DELAY_UNIT = TimeUnit.MILLISECONDS;
 
-	private final StorageController storageController;
+	private final StorageControllerInternalFacade storageController;
 	private final String userID;
 
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
@@ -26,7 +28,7 @@ class StorageProcessor extends UntypedActor
 	private boolean persistDocumentMetadataMessageInQueue = false;
 	private Map<String, DocumentMetadata> documentMetadataMap = new HashMap<>();
 
-	public StorageProcessor(final StorageController storageController, final String userID)
+	public MessageProcessor(final StorageControllerInternalFacade storageController, final String userID)
 	{
 		this.storageController = storageController;
 		this.userID = userID;
@@ -133,7 +135,6 @@ class StorageProcessor extends UntypedActor
 	{
 		isReady = false;
 		documentMetadataMap.clear();
-		storageController.incrementStorageProcessorDestroyed();
 
 		context().parent().tell(new BaseMessage(MessageType.STORAGE_PROCESSOR_IDLE, userID), self());
 	}
@@ -142,10 +143,10 @@ class StorageProcessor extends UntypedActor
 	{
 		try
 		{
-			final String documentMetadataJSON = storageController.getStorageDBController().getUserDocumentMetadata(userID);
+			final String documentMetadataJSON = storageController.getCouchbaseWrapper().getUserDocumentMetadata(userID);
 			if (documentMetadataJSON != null)
 			{
-				documentMetadataMap = StorageJsonController.getDocumentMetadataMap(documentMetadataJSON);
+				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(documentMetadataJSON);
 
 				if (documentMetadataMap == null)
 				{
@@ -153,7 +154,6 @@ class StorageProcessor extends UntypedActor
 				}
 			}
 
-			storageController.incrementStorageProcessorCreated();
 			isReady = true;
 		}
 		catch (Exception e)
@@ -170,7 +170,7 @@ class StorageProcessor extends UntypedActor
 
 		try
 		{
-			storageController.getStorageDBController().storeDocumentMetadata(userID, StorageJsonController.toJson(documentMetadataMap));
+			storageController.getCouchbaseWrapper().storeDocumentMetadata(userID, GsonWrapper.toJson(documentMetadataMap));
 		}
 		catch (Exception e)
 		{
@@ -188,14 +188,14 @@ class StorageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocumentMetadata(final BaseMessage message)
 	{
-		((BaseCallbackMessage<String>) message).setResult(StorageJsonController.toJson(documentMetadataMap));
+		((BaseCallbackMessage<String>) message).setResult(GsonWrapper.toJson(documentMetadataMap));
 	}
 
 	private void processPersistDocument(final AddDocumentMessage message)
 	{
 		try
 		{
-			storageController.getStorageDBController().storeDocument(message.getKey(), message.getJson());
+			storageController.getCouchbaseWrapper().storeDocument(message.getKey(), message.getJson());
 		}
 		catch (Exception e)
 		{
@@ -226,7 +226,7 @@ class StorageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocument(final BaseMessageWithKey message)
 	{
-		final String document = storageController.getStorageDBController().getDocument(message.getKey());
+		final String document = storageController.getCouchbaseWrapper().getDocument(message.getKey());
 		((BaseCallbackMessageWithKey<String>) message).setResult(document);
 
 		storageController.incrementDocumentFetched();
@@ -236,7 +236,7 @@ class StorageProcessor extends UntypedActor
 	{
 		try
 		{
-			storageController.getStorageDBController().deleteDocument(message.getKey());
+			storageController.getCouchbaseWrapper().deleteDocument(message.getKey());
 			documentMetadataMap.remove(message.getKey());
 
 			sendPersistDocumentMetadataMessage();

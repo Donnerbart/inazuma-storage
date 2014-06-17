@@ -11,4 +11,8 @@ public interface StorageControllerFacade
 	public void deleteDocumentAsync(String userID, String key);
 
 	public void markDocumentAsReadAsync(String userID, String key);
+
+	public void shutdown();
+
+	public void awaitShutdown();
 }

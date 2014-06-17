@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import com.couchbase.client.CouchbaseClient;
 import com.hazelcast.core.OperationTimeoutException;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
 import net.spy.memcached.internal.OperationFuture;
 import org.mockito.Mock;
@@ -48,20 +49,20 @@ public class StorageControllerTest
 	{
 		final Map<String, DocumentMetadata> documentMetadataMap1 = new HashMap<>();
 		documentMetadataMap1.put(DOCUMENT_1_KEY, DOCUMENT_1_METADATA);
-		DOCUMENT_METADATA_JSON_1 = StorageJsonController.toJson(documentMetadataMap1);
+		DOCUMENT_METADATA_JSON_1 = GsonWrapper.toJson(documentMetadataMap1);
 
 		final Map<String, DocumentMetadata> documentMetadataMap2 = new HashMap<>();
 		documentMetadataMap2.put(DOCUMENT_1_KEY, DOCUMENT_1_METADATA);
 		documentMetadataMap2.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
-		DOCUMENT_METADATA_JSON_1_AND_2 = StorageJsonController.toJson(documentMetadataMap2);
+		DOCUMENT_METADATA_JSON_1_AND_2 = GsonWrapper.toJson(documentMetadataMap2);
 
-		final Map<String, DocumentMetadata> documentMetadataMap = StorageJsonController.getDocumentMetadataMap(DOCUMENT_METADATA_JSON_1);
+		final Map<String, DocumentMetadata> documentMetadataMap = GsonWrapper.getDocumentMetadataMap(DOCUMENT_METADATA_JSON_1);
 		documentMetadataMap.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
-		DOCUMENT_METADATA_JSON_2_AFTER_1 = StorageJsonController.toJson(documentMetadataMap);
+		DOCUMENT_METADATA_JSON_2_AFTER_1 = GsonWrapper.toJson(documentMetadataMap);
 
 		final Map<String, DocumentMetadata> documentMetadataMap3 = new HashMap<>();
 		documentMetadataMap3.put(DOCUMENT_3_KEY, DOCUMENT_3_METADATA);
-		DOCUMENT_METADATA_JSON_3 = StorageJsonController.toJson(documentMetadataMap3);
+		DOCUMENT_METADATA_JSON_3 = GsonWrapper.toJson(documentMetadataMap3);
 	}
 
 	private CouchbaseClient client;

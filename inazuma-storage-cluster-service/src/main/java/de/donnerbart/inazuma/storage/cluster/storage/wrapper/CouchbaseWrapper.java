@@ -1,15 +1,15 @@
-package de.donnerbart.inazuma.storage.cluster.storage;
+package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
 import com.couchbase.client.CouchbaseClient;
 import net.spy.memcached.internal.OperationFuture;
 
 import java.util.concurrent.ExecutionException;
 
-class StorageDBController
+public class CouchbaseWrapper
 {
 	private final CouchbaseClient cb;
 
-	public StorageDBController(final CouchbaseClient cb)
+	public CouchbaseWrapper(final CouchbaseClient cb)
 	{
 		this.cb = cb;
 	}

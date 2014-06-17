@@ -7,6 +7,7 @@ import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
 import de.donnerbart.inazuma.storage.base.manager.CouchbaseManager;
 import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
+import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class InazumaStorageClusterService
 {
 	private static final CountDownLatch latch = new CountDownLatch(1);
-	private static final AtomicReference<StorageController> storageControllerReference = new AtomicReference<>(null);
+	private static final AtomicReference<StorageControllerFacade> storageControllerReference = new AtomicReference<>(null);
 
 	public static CountDownLatch start()
 	{
@@ -29,11 +30,11 @@ public class InazumaStorageClusterService
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");
 
-		// Startup storage controller
-		final StorageController storageController = new StorageController(cb);
+		// Startup storage wrapper
+		final StorageControllerFacade storageController = new StorageController(cb);
 		storageControllerReference.set(storageController);
 
-		// Startup request controller
+		// Startup request wrapper
 		new RequestController(hz, storageController);
 
 		// Create shutdown event
@@ -56,7 +57,7 @@ public class InazumaStorageClusterService
 
 			// Shutdown StorageController
 			System.out.println("Shutting down StorageController...");
-			final StorageController storageController = storageControllerReference.get();
+			final StorageControllerFacade storageController = storageControllerReference.get();
 			if (storageController != null)
 			{
 				storageController.shutdown();

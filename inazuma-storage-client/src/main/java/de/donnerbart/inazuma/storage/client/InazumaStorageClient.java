@@ -21,7 +21,7 @@ public class InazumaStorageClient
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.client");
 
-		// Startup request controller
+		// Startup request wrapper
 		new RequestController(hz, null);
 
 		// Create shutdown event

@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.cluster.storage;
+package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,7 +9,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataAdapt
 import java.lang.reflect.Type;
 import java.util.Map;
 
-class StorageJsonController
+public class GsonWrapper
 {
 	private static final Type typeOfMap;
 

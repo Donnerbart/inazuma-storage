@@ -1,23 +1,24 @@
-package de.donnerbart.inazuma.storage.cluster.storage;
+package de.donnerbart.inazuma.storage.cluster.storage.actor;
 
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
+import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseCallbackMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 
-class StorageDispatcher extends UntypedActor
+public class MessageDispatcher extends UntypedActor
 {
 	private final StorageController storageController;
 
-	private final ConcurrentMap<String, ActorRef> storageProcessorByUserID = new ConcurrentHashMap<>();
+	private final Map<String, ActorRef> messageProcessorByUserID = new HashMap<>();
 
 	private boolean running = true;
 
-	public StorageDispatcher(final StorageController storageController)
+	public MessageDispatcher(final StorageController storageController)
 	{
 		this.storageController = storageController;
 	}
@@ -48,7 +49,7 @@ class StorageDispatcher extends UntypedActor
 				}
 				case STORAGE_PROCESSOR_IDLE:
 				{
-					storageProcessorByUserID.remove(baseMessage.getUserID());
+					messageProcessorByUserID.remove(baseMessage.getUserID());
 					sender().tell(PoisonPill.getInstance(), self());
 					break;
 				}
@@ -71,16 +72,22 @@ class StorageDispatcher extends UntypedActor
 
 	private ActorRef findOrCreateProcessorFor(final String userID)
 	{
-		final ActorRef maybeActor = storageProcessorByUserID.get(userID);
+		final ActorRef maybeActor = messageProcessorByUserID.get(userID);
 		if (maybeActor != null)
 		{
 			return maybeActor;
 		}
 
-		final ActorRef storageProcessor = StorageActorFactory.createStorageProcessor(context(), storageController, userID);
-		final ActorRef previousActor = storageProcessorByUserID.putIfAbsent(userID, storageProcessor);
+		final ActorRef messageProcessor = ActorFactory.createMessageProcessor(context(), storageController, userID);
+		final ActorRef previousActor = messageProcessorByUserID.putIfAbsent(userID, messageProcessor);
+		if (previousActor != null)
+		{
+			messageProcessor.tell(PoisonPill.getInstance(), self());
 
-		return (previousActor != null) ? previousActor : storageProcessor;
+			return previousActor;
+		}
+
+		return messageProcessor;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -88,13 +95,13 @@ class StorageDispatcher extends UntypedActor
 	{
 		running = false;
 
-		storageController.setShutdownCountdown(storageProcessorByUserID.size() + 1);
+		storageController.setShutdownCountdown(messageProcessorByUserID.size() + 1);
 		((BaseCallbackMessage<Object>) message).getCallback().setResult(null);
 
-		for (final String userID : storageProcessorByUserID.keySet())
+		for (final String userID : messageProcessorByUserID.keySet())
 		{
-			final ActorRef storageProcessor = storageProcessorByUserID.get(userID);
-			storageProcessor.tell(PoisonPill.getInstance(), self());
+			final ActorRef messageProcessor = messageProcessorByUserID.get(userID);
+			messageProcessor.tell(PoisonPill.getInstance(), self());
 		}
 
 		self().tell(PoisonPill.getInstance(), self());
