@@ -6,7 +6,7 @@ import akka.dispatch.sysmsg.Terminate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
-public class DeadLetterListener extends UntypedActor
+class DeadLetterListener extends UntypedActor
 {
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 

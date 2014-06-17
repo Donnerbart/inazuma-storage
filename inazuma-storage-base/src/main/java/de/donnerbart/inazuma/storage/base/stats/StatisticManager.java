@@ -37,7 +37,7 @@ public final class StatisticManager
 		collectionThread.interrupt();
 	}
 
-	public Attribute getStatisticValue(final String group, final String attribute)
+	Attribute getStatisticValue(final String group, final String attribute)
 	{
 		try
 		{

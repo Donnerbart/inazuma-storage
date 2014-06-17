@@ -10,6 +10,7 @@ public class JMXAgent
 {
 	private static final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
+	@SuppressWarnings("SameParameterValue")
 	public JMXAgent(final String domain, final String type)
 	{
 		try

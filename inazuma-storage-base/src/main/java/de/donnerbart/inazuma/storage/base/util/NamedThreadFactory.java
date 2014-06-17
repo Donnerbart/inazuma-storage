@@ -13,6 +13,7 @@ public class NamedThreadFactory implements ThreadFactory
 	private final AtomicInteger threadNumber = new AtomicInteger(1);
 	private final String namePrefix;
 
+	@SuppressWarnings("SameParameterValue")
 	public NamedThreadFactory(final String _namePrefix)
 	{
 		namePrefix = _namePrefix;

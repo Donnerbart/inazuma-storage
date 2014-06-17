@@ -42,6 +42,7 @@ public class CustomStatisticValue<VALUE> extends AbstractStatisticValue<VALUE>
 		lastTimeRangedValueDefault = valueCollector.collectValue();
 	}
 
+	@SuppressWarnings("SameReturnValue")
 	public static interface ValueCollector<VALUE>
 	{
 		VALUE collectValue();

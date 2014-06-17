@@ -69,9 +69,9 @@ public class StorageControllerTest
 	private StorageController storageController;
 
 	@Mock
-	private OperationFuture<Boolean> futureTrue;
+	private final OperationFuture<Boolean> futureTrue = null;
 	@Mock
-	private OperationFuture<Boolean> futureFalse;
+	private final OperationFuture<Boolean> futureFalse = null;
 
 	@BeforeMethod
 	public void setUp() throws Exception
