@@ -4,8 +4,6 @@ import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
 
 public interface StorageControllerInternalFacade
 {
-	public void shutdownCountdown();
-
 	CouchbaseWrapper getCouchbaseWrapper();
 
 	void incrementQueueSize();

@@ -5,9 +5,9 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;
@@ -40,12 +40,6 @@ public class MessageProcessor extends UntypedActor
 	public void preStart() throws Exception
 	{
 		context().setReceiveTimeout(Duration.create(5, TimeUnit.MINUTES));
-	}
-
-	@Override
-	public void postStop()
-	{
-		storageController.shutdownCountdown();
 	}
 
 	@Override
@@ -136,7 +130,7 @@ public class MessageProcessor extends UntypedActor
 		isReady = false;
 		documentMetadataMap.clear();
 
-		context().parent().tell(new BaseMessage(MessageType.STORAGE_PROCESSOR_IDLE, userID), self());
+		context().parent().tell(new BaseMessage(MessageType.MESSAGE_PROCESSOR_IDLE, userID), self());
 	}
 
 	private void processLoadDocumentMetadataMessage(final BaseMessage message)

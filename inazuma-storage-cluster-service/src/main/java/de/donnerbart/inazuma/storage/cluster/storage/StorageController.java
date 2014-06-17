@@ -12,10 +12,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
-import scala.concurrent.duration.Duration;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,10 +24,10 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private final ActorRef messageDispatcher;
 
 	private final AtomicLong queueSize = new AtomicLong(0);
-	private final AtomicReference<CountDownLatch> shutdownLatch = new AtomicReference<>(null);
 
 	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
 	private final AtomicReference<BlockingCallback<Object>> callbackEmptyQueue = new AtomicReference<>(new BlockingCallback<>());
+	private final AtomicReference<BlockingCallback<Object>> callbackAllSoulsReaped = new AtomicReference<>(new BlockingCallback<>());
 
 	private final BasicStatisticValue documentAdded = new BasicStatisticValue("StorageController", "documentAdded");
 	private final BasicStatisticValue documentFetched = new BasicStatisticValue("StorageController", "documentFetched");
@@ -44,14 +41,16 @@ public class StorageController implements StorageControllerFacade, StorageContro
 
 	public StorageController(final CouchbaseClient cb)
 	{
-		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
-		this.messageDispatcher = ActorFactory.createMessageDispatcher(actorSystem, this);
 		this.couchbaseWrapper = new CouchbaseWrapper(cb);
+
+		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
+		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
+
+		final ActorRef theReaper = ActorFactory.createTheReaper(actorSystem, callbackAllSoulsReaped.get());
+		this.messageDispatcher = ActorFactory.createMessageDispatcher(actorSystem, this, theReaper);
 
 		final CustomStatisticValue queueSize = new CustomStatisticValue<>("StorageController", "queueSize", new StorageQueueSizeCollector(this));
 		StatisticManager.getInstance().registerStatisticValue(queueSize);
-
-		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
 	}
 
 	@Override
@@ -113,42 +112,15 @@ public class StorageController implements StorageControllerFacade, StorageContro
 			callbackEmptyQueue.get().getResult();
 		}
 
-		BaseCallbackMessage<Object> message = new BaseCallbackMessage<>(MessageType.SHUTDOWN, null);
-		messageDispatcher.tell(message, ActorRef.noSender());
-
-		message.getCallback().getResult();
-	}
-
-	public void setShutdownCountdown(final int numberOfActors)
-	{
-		System.out.println("Killing " + numberOfActors + " running actor(s)...");
-		shutdownLatch.set(new CountDownLatch(numberOfActors));
-	}
-
-	@Override
-	public void shutdownCountdown()
-	{
-		final CountDownLatch latch = shutdownLatch.get();
-		if (latch != null)
-		{
-			latch.countDown();
-		}
+		messageDispatcher.tell(ControlMessageType.SHUTDOWN, ActorRef.noSender());
 	}
 
 	@Override
 	public void awaitShutdown()
 	{
-		try
-		{
-			shutdownLatch.get().await();
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-
-		actorSystem.shutdown();
-		actorSystem.awaitTermination(Duration.create(10, TimeUnit.SECONDS));
+		System.out.println("Waiting for actors to finish...");
+		callbackAllSoulsReaped.get().getResult();
+		actorSystem.awaitTermination();
 	}
 
 	@Override
