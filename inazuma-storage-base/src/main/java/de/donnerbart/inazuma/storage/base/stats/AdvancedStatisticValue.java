@@ -4,6 +4,7 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings("unused")
 public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 {
 	private final AtomicLong timeRangeValue = new AtomicLong(0);

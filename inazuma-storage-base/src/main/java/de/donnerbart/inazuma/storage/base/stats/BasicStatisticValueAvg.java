@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.base.stats;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings("unused")
 public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 {
 	private final AtomicLong timeRangeValue = new AtomicLong(0);

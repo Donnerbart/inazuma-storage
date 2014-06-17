@@ -2,6 +2,7 @@ package de.donnerbart.inazuma.storage.base.stats;
 
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("unused")
 public class CustomStatisticValue<VALUE> extends AbstractStatisticValue<VALUE>
 {
 	private final ValueCollector<VALUE> valueCollector;
