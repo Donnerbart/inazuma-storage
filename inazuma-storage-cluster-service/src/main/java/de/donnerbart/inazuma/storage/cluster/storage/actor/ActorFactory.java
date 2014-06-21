@@ -4,50 +4,39 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.japi.Creator;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 
 public class ActorFactory
 {
-	public static ActorRef createTheReaper(final ActorSystem context, final BlockingCallback<Object> callback)
+	public static ActorRef createTheReaper(final ActorSystem context, final BlockingCallback<Object> callbackAllSoulsReaped, final BlockingCallback<Integer> callbackReportWatchedActorCount)
 	{
-		return context.actorOf(Props.create(new Creator<TheReaper>()
-		{
-			@Override
-			public TheReaper create() throws Exception
-			{
-				return new TheReaper(callback);
-			}
-		}), "theReaper");
+		return context.actorOf(Props.create(
+				TheReaper.class,
+				() -> new TheReaper(callbackAllSoulsReaped, callbackReportWatchedActorCount)
+		), "theReaper");
 	}
 
 	public static ActorRef createDeadLetterListener(final ActorSystem context)
 	{
-		return context.actorOf(Props.create(DeadLetterListener.class), "deadLetterListener");
+		return context.actorOf(Props.create(
+				DeadLetterListener.class
+		), "deadLetterListener");
 	}
 
 	public static ActorRef createMessageDispatcher(final ActorSystem context, final StorageController storageController, final ActorRef theReaper)
 	{
-		return context.actorOf(Props.create(new Creator<MessageDispatcher>()
-		{
-			@Override
-			public MessageDispatcher create() throws Exception
-			{
-				return new MessageDispatcher(storageController, theReaper);
-			}
-		}), "messageDispatcher");
+		return context.actorOf(Props.create(
+				MessageDispatcher.class,
+				() -> new MessageDispatcher(storageController, theReaper)
+		), "messageDispatcher");
 	}
 
 	public static ActorRef createMessageProcessor(final ActorContext context, final StorageController storageController, final String userID)
 	{
-		return context.actorOf(Props.create(new Creator<MessageProcessor>()
-		{
-			@Override
-			public MessageProcessor create() throws Exception
-			{
-				return new MessageProcessor(storageController, userID);
-			}
-		}));
+		return context.actorOf(Props.create(
+				MessageProcessor.class,
+				() -> new MessageProcessor(storageController, userID)
+		));
 	}
 }

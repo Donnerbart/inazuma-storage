@@ -10,7 +10,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MessageDispatcher extends UntypedActor
+class MessageDispatcher extends UntypedActor
 {
 	private final StorageController storageController;
 	private final ActorRef theReaper;
@@ -24,7 +24,7 @@ public class MessageDispatcher extends UntypedActor
 		this.storageController = storageController;
 		this.theReaper = theReaper;
 
-		theReaper.tell("watch", self());
+		theReaper.tell(ControlMessageType.WATCH_ME, self());
 	}
 
 	@Override

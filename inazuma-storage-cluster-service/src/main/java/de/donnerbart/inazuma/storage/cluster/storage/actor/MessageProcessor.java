@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class MessageProcessor extends UntypedActor
+class MessageProcessor extends UntypedActor
 {
 	private static final long DELAY = 50;
 	private static final TimeUnit DELAY_UNIT = TimeUnit.MILLISECONDS;

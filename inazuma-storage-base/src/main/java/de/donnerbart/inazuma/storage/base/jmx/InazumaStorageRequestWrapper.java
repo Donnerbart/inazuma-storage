@@ -48,19 +48,13 @@ public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrappe
 	{
 		final NamedThreadFactory namedThreadFactory = new NamedThreadFactory("DocumentCreator");
 
-		final Thread thread = namedThreadFactory.newThread(new Runnable()
-		{
-			@Override
-			public void run()
+		namedThreadFactory.newThread(() -> {
+			int i = count;
+			while (i-- > 0)
 			{
-				int i = count;
-				while (i-- > 0)
-				{
-					insertSingleDocument();
-				}
+				insertSingleDocument();
 			}
-		});
-		thread.start();
+		}).start();
 	}
 
 	@Override
