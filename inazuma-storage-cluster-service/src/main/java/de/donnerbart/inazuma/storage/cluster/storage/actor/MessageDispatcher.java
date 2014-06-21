@@ -24,7 +24,7 @@ public class MessageDispatcher extends UntypedActor
 		this.storageController = storageController;
 		this.theReaper = theReaper;
 
-		theReaper.tell("watch", self());
+		theReaper.tell(ControlMessageType.WATCH_ME, self());
 	}
 
 	@Override
