@@ -1,12 +1,10 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
-import com.couchbase.client.CouchbaseClient;
-import com.hazelcast.core.OperationTimeoutException;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.StringDocument;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
-import net.spy.memcached.internal.OperationFuture;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -65,24 +63,19 @@ public class StorageControllerAddDocumentTest
 		DOCUMENT_METADATA_JSON_3 = GsonWrapper.toJson(documentMetadataMap3);
 	}
 
-	@Mock
-	private final OperationFuture<Boolean> futureTrue = null;
-	@Mock
-	private final OperationFuture<Boolean> futureFalse = null;
-	@Mock
-	private final CouchbaseClient client = null;
+	private Bucket bucket;
 
 	private StorageController storageController;
 
 	@BeforeMethod
+	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception
 	{
+		bucket = mock(Bucket.class, RETURNS_DEEP_STUBS);
+
 		MockitoAnnotations.initMocks(this);
 
-		when(futureTrue.get()).thenReturn(true);
-		when(futureFalse.get()).thenReturn(false);
-
-		storageController = new StorageController(client);
+		storageController = new StorageController(bucket);
 	}
 
 	@AfterMethod
@@ -94,198 +87,200 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addFirstDocument()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		//when(bucket.upsert(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON).toBlockingObservable().single()).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1, StringDocument.class).toBlocking().single().content()).thenReturn(null);
+		//when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		//verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		//verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
+	/*
 	@Test
 	public void addSecondDocumentAfterFirstDocumentIsAlreadyPersisted()
 	{
-		when(client.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DOCUMENT_METADATA_JSON_1);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DOCUMENT_METADATA_JSON_1);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_2_AFTER_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void addSameDocumentTwice()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void addSingleDocumentWithExceptionOnFirstDatabaseSet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenThrow(new IllegalStateException()).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenThrow(new IllegalStateException()).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void addSingleDocumentWithFailureOnFirstDatabaseSet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureFalse).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureFalse).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket, times(2)).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void persistDocumentMetadataWithExceptionOnFirstDatabaseSet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenThrow(new IllegalStateException()).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenThrow(new IllegalStateException()).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void persistDocumentMetadataWithFailureOnFirstDatabaseSet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void persistDocumentMetadataWithFailureOnFirstAndSecondDatabaseSet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureFalse).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureFalse).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client, times(3)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket, times(3)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromSameUser()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1_AND_2)).thenReturn(futureFalse).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1_AND_2)).thenReturn(futureFalse).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1_AND_2);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).set(DOCUMENT_2_KEY, 0, DOCUMENT_2_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1_AND_2);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromDifferentUser()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.set(DOCUMENT_3_KEY, 0, DOCUMENT_3_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_2)).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureTrue);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_2, 0, DOCUMENT_METADATA_JSON_3)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_3_KEY, 0, DOCUMENT_3_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(null);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_2)).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureFalse).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_2, 0, DOCUMENT_METADATA_JSON_3)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client).set(DOCUMENT_3_KEY, 0, DOCUMENT_3_JSON);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).get(DOCUMENT_METADATA_KEY_USER_2);
-		verify(client, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_2, 0, DOCUMENT_METADATA_JSON_3);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).set(DOCUMENT_3_KEY, 0, DOCUMENT_3_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_2);
+		verify(bucket, times(2)).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_2, 0, DOCUMENT_METADATA_JSON_3);
+		verifyZeroInteractions(bucket);
 	}
 
 	@Test
 	public void getDocumentMetadataExceptionOnFirstDatabaseGet()
 	{
-		when(client.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
-		when(client.get(DOCUMENT_METADATA_KEY_USER_1)).thenThrow(new OperationTimeoutException("Operation timeout")).thenReturn(null);
-		when(client.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		when(bucket.set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON)).thenReturn(futureTrue);
+		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1)).thenThrow(new OperationTimeoutException("Operation timeout")).thenReturn(null);
+		when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		verify(client).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(client, times(2)).get(DOCUMENT_METADATA_KEY_USER_1);
-		verify(client).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
-		verifyZeroInteractions(client);
+		verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket, times(2)).get(DOCUMENT_METADATA_KEY_USER_1);
+		verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(bucket);
 	}
+	*/
 }

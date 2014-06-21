@@ -3,7 +3,7 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
-import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.java.Bucket;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
@@ -39,9 +39,9 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private final BasicStatisticValue documentRetries = new BasicStatisticValue("StorageController", "retriesDocument");
 	private final BasicStatisticValue documentPersisted = new BasicStatisticValue("StorageController", "persistedDocument");
 
-	public StorageController(final CouchbaseClient cb)
+	public StorageController(final Bucket bucket)
 	{
-		this.couchbaseWrapper = new CouchbaseWrapper(cb);
+		this.couchbaseWrapper = new CouchbaseWrapper(bucket);
 
 		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
 		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);

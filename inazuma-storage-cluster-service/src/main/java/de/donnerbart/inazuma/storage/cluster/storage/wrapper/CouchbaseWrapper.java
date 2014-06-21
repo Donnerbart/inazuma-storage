@@ -1,54 +1,33 @@
 package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
-import com.couchbase.client.CouchbaseClient;
-import net.spy.memcached.internal.OperationFuture;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.StringDocument;
 
 import java.util.concurrent.ExecutionException;
 
 public class CouchbaseWrapper
 {
-	private final CouchbaseClient cb;
+	private final Bucket bucket;
 
-	public CouchbaseWrapper(final CouchbaseClient cb)
+	public CouchbaseWrapper(final Bucket bucket)
 	{
-		this.cb = cb;
+		this.bucket = bucket;
 	}
 
-	public String getUserDocumentMetadata(final String userID)
+	public String getDocument(final String id)
 	{
-		return (String) cb.get(createDocumentMetadataKey(userID));
+		//final StringDocument document = bucket.get(id, StringDocument.class).toBlocking().single();
+		//return (document != null) ? document.content() : null;
+		return bucket.get(id, StringDocument.class).toBlocking().single().content();
 	}
 
-	public void storeDocumentMetadata(final String userID, final String document) throws ExecutionException, InterruptedException
+	public void insertDocument(final String key, final String document)
 	{
-		handleOperationFuture(cb.set(createDocumentMetadataKey(userID), 0, document));
-	}
-
-	public void storeDocument(final String key, final String document) throws ExecutionException, InterruptedException
-	{
-		handleOperationFuture(cb.set(key, 0, document));
-	}
-
-	public String getDocument(final String key)
-	{
-		return (String) cb.get(key);
+		bucket.upsert(StringDocument.create(key, document)).toBlocking().single();
 	}
 
 	public void deleteDocument(final String key) throws ExecutionException, InterruptedException
 	{
-		handleOperationFuture(cb.delete(key));
-	}
-
-	private void handleOperationFuture(final OperationFuture<Boolean> future) throws ExecutionException, InterruptedException
-	{
-		if (!future.get())
-		{
-			throw new RuntimeException("Got negative result from database operation!");
-		}
-	}
-
-	private String createDocumentMetadataKey(final String userID)
-	{
-		return "u-" + userID;
+		bucket.remove(key);
 	}
 }

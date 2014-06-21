@@ -1,6 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster;
 
-import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.java.Bucket;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
@@ -24,14 +24,14 @@ public class InazumaStorageClusterService
 		// Get Hazelcast instance
 		final HazelcastInstance hz = HazelcastManager.getInstance();
 
-		// Get Couchbase connection
-		final CouchbaseClient cb = CouchbaseManager.getClient();
+		// Get Couchbase bucket
+		final Bucket bucket = CouchbaseManager.getBucket();
 
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");
 
 		// Startup storage wrapper
-		final StorageControllerFacade storageController = new StorageController(cb);
+		final StorageControllerFacade storageController = new StorageController(bucket);
 		storageControllerReference.set(storageController);
 
 		// Startup request wrapper

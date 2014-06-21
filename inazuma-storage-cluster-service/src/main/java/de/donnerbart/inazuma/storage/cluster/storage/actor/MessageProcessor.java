@@ -7,6 +7,7 @@ import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import scala.concurrent.duration.Duration;
 
@@ -137,7 +138,9 @@ public class MessageProcessor extends UntypedActor
 	{
 		try
 		{
-			final String documentMetadataJSON = storageController.getCouchbaseWrapper().getUserDocumentMetadata(userID);
+			final String documentMetadataJSON = storageController.getCouchbaseWrapper().getDocument(
+					DocumentMetadataUtil.createKeyFromUserID(userID)
+			);
 			if (documentMetadataJSON != null)
 			{
 				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(documentMetadataJSON);
@@ -163,7 +166,10 @@ public class MessageProcessor extends UntypedActor
 
 		try
 		{
-			storageController.getCouchbaseWrapper().storeDocumentMetadata(userID, GsonWrapper.toJson(documentMetadataMap));
+			storageController.getCouchbaseWrapper().insertDocument(
+					DocumentMetadataUtil.createKeyFromUserID(userID),
+					GsonWrapper.toJson(documentMetadataMap)
+			);
 		}
 		catch (Exception e)
 		{
@@ -188,7 +194,10 @@ public class MessageProcessor extends UntypedActor
 	{
 		try
 		{
-			storageController.getCouchbaseWrapper().storeDocument(message.getKey(), message.getJson());
+			storageController.getCouchbaseWrapper().insertDocument(
+					message.getKey(),
+					message.getJson()
+			);
 		}
 		catch (Exception e)
 		{
@@ -219,7 +228,9 @@ public class MessageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocument(final BaseMessageWithKey message)
 	{
-		final String document = storageController.getCouchbaseWrapper().getDocument(message.getKey());
+		final String document = storageController.getCouchbaseWrapper().getDocument(
+				message.getKey()
+		);
 		((BaseCallbackMessageWithKey<String>) message).setResult(document);
 
 		storageController.incrementDocumentFetched();
