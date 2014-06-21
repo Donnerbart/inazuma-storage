@@ -16,6 +16,20 @@
         <module>inazuma-storage-cluster-service</module>
     </modules>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <scm>
         <connection>scm:git:git://github.com/donnerbart/inazuma-storage.git</connection>
         <developerConnection>scm:git:git@github.com:donnerbart/inazuma-storage.git</developerConnection>
