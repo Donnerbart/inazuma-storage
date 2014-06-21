@@ -10,7 +10,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MessageDispatcher extends UntypedActor
+class MessageDispatcher extends UntypedActor
 {
 	private final StorageController storageController;
 	private final ActorRef theReaper;

@@ -5,7 +5,7 @@ import akka.actor.UntypedActor;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
 
-public class TheReaper extends UntypedActor
+class TheReaper extends UntypedActor
 {
 	private final BlockingCallback<Object> callbackAllSoulsReaped;
 	private final BlockingCallback<Integer> callbackReportWatchedActorCount;
