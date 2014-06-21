@@ -10,14 +10,14 @@ import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 
 public class ActorFactory
 {
-	public static ActorRef createTheReaper(final ActorSystem context, final BlockingCallback<Object> callback)
+	public static ActorRef createTheReaper(final ActorSystem context, final BlockingCallback<Object> callbackAllSoulsReaped, final BlockingCallback<Integer> callbackReportWatchedActorCount)
 	{
 		return context.actorOf(Props.create(new Creator<TheReaper>()
 		{
 			@Override
 			public TheReaper create() throws Exception
 			{
-				return new TheReaper(callback);
+				return new TheReaper(callbackAllSoulsReaped, callbackReportWatchedActorCount);
 			}
 		}), "theReaper");
 	}

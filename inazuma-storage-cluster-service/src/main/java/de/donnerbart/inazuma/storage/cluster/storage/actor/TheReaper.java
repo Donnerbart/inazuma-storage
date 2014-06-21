@@ -7,13 +7,15 @@ import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
 
 public class TheReaper extends UntypedActor
 {
-	private final BlockingCallback<Object> callback;
+	private final BlockingCallback<Object> callbackAllSoulsReaped;
+	private final BlockingCallback<Integer> callbackReportWatchedActorCount;
 
 	private int watchCounter;
 
-	public TheReaper(final BlockingCallback<Object> callback)
+	public TheReaper(final BlockingCallback<Object> callbackAllSoulsReaped, final BlockingCallback<Integer> callbackReportWatchedActorCount)
 	{
-		this.callback = callback;
+		this.callbackAllSoulsReaped = callbackAllSoulsReaped;
+		this.callbackReportWatchedActorCount = callbackReportWatchedActorCount;
 		this.watchCounter = 0;
 	}
 
@@ -32,6 +34,10 @@ public class TheReaper extends UntypedActor
 				allSoulsReaped();
 			}
 		}
+		else if (message == ControlMessageType.REPORT_WATCH_COUNT)
+		{
+			callbackReportWatchedActorCount.setResult(watchCounter);
+		}
 		else
 		{
 			unhandled(message);
@@ -40,7 +46,7 @@ public class TheReaper extends UntypedActor
 
 	private void allSoulsReaped()
 	{
-		callback.setResult(null);
+		callbackAllSoulsReaped.setResult(null);
 
 		context().system().shutdown();
 	}

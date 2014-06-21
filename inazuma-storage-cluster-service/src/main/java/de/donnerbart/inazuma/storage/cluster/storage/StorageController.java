@@ -15,19 +15,20 @@ import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class StorageController implements StorageControllerFacade, StorageControllerInternalFacade
 {
 	private final CouchbaseWrapper couchbaseWrapper;
 	private final ActorSystem actorSystem;
+	private final ActorRef theReaper;
 	private final ActorRef messageDispatcher;
 
 	private final AtomicLong queueSize = new AtomicLong(0);
 
 	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
-	private final AtomicReference<BlockingCallback<Object>> callbackEmptyQueue = new AtomicReference<>(new BlockingCallback<>());
-	private final AtomicReference<BlockingCallback<Object>> callbackAllSoulsReaped = new AtomicReference<>(new BlockingCallback<>());
+	private final BlockingCallback<Object> callbackEmptyQueue = new BlockingCallback<>();
+	private final BlockingCallback<Object> callbackAllSoulsReaped = new BlockingCallback<>();
+	private final BlockingCallback<Integer> callbackReportWatchedActorCount = new BlockingCallback<>();
 
 	private final BasicStatisticValue documentAdded = new BasicStatisticValue("StorageController", "documentAdded");
 	private final BasicStatisticValue documentFetched = new BasicStatisticValue("StorageController", "documentFetched");
@@ -46,7 +47,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
 		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
 
-		final ActorRef theReaper = ActorFactory.createTheReaper(actorSystem, callbackAllSoulsReaped.get());
+		this.theReaper = ActorFactory.createTheReaper(actorSystem, callbackAllSoulsReaped, callbackReportWatchedActorCount);
 		this.messageDispatcher = ActorFactory.createMessageDispatcher(actorSystem, this, theReaper);
 
 		final CustomStatisticValue queueSize = new CustomStatisticValue<>("StorageController", "queueSize", new StorageQueueSizeCollector(this));
@@ -109,7 +110,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		{
 			System.out.println("Waiting for queue to get empty (" + queue + ")...");
 			notifyEmptyQueue.set(true);
-			callbackEmptyQueue.get().getResult();
+			callbackEmptyQueue.getResult();
 		}
 
 		messageDispatcher.tell(ControlMessageType.SHUTDOWN, ActorRef.noSender());
@@ -118,8 +119,15 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void awaitShutdown()
 	{
-		System.out.println("Waiting for actors to finish...");
-		callbackAllSoulsReaped.get().getResult();
+		theReaper.tell(ControlMessageType.REPORT_WATCH_COUNT, ActorRef.noSender());
+		final int actorCount = callbackReportWatchedActorCount.getResult();
+
+		if (actorCount > 0)
+		{
+			System.out.println("Waiting for actors to finish (" + actorCount + ")...");
+			callbackAllSoulsReaped.getResult();
+		}
+
 		actorSystem.awaitTermination();
 	}
 
@@ -185,7 +193,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		final long queue = queueSize.decrementAndGet();
 		if (notifyEmptyQueue.get() && queue == 0)
 		{
-			callbackEmptyQueue.get().setResult(null);
+			callbackEmptyQueue.setResult(null);
 		}
 	}
 }
