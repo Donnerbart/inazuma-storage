@@ -112,6 +112,9 @@ class MessageProcessor extends UntypedActor
 					processAddDocumentToMetadata((AddDocumentToMetadataControlMessage) controlMessage);
 					break;
 				}
+				case REMOVE_DOCUMENT_FROM_METADATA:
+					processRemoveDocumentFromMetadata(controlMessage);
+					break;
 				default:
 				{
 					unhandled(message);
@@ -141,7 +144,14 @@ class MessageProcessor extends UntypedActor
 
 	private void sendPersistDocumentMetadataMessage()
 	{
-		self().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+		if (!persistDocumentMetadataMessageInQueue)
+		{
+			persistDocumentMetadataMessageInQueue = true;
+
+			storageController.incrementQueueSize();
+
+			self().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -186,23 +196,20 @@ class MessageProcessor extends UntypedActor
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
 	{
-		try
-		{
-			storageController.getCouchbaseWrapper().deleteDocument(message.getKey());
-			documentMetadataMap.remove(message.getKey());
+		storageController.getCouchbaseWrapper().deleteDocument(
+				message.getKey()
+		).doOnNext(document -> {
+			if (!document.status().isSuccess())
+			{
+				log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, document);
+				sendDelayedMessage(message);
+				storageController.incrementDocumentRetries();
 
-			sendPersistDocumentMetadataMessage();
-		}
-		catch (Exception e)
-		{
-			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e.getMessage());
-			sendDelayedMessage(message);
-			storageController.incrementDocumentRetries();
+				return;
+			}
 
-			return;
-		}
-
-		storageController.incrementDataDeleted();
+			self().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), self());
+		}).subscribe();
 	}
 
 	private void processMarkDocumentAsRead(final BaseMessageWithKey baseMessage)
@@ -271,17 +278,20 @@ class MessageProcessor extends UntypedActor
 	{
 		documentMetadataMap.put(message.getContent(), message.getMetadata());
 
-		if (!persistDocumentMetadataMessageInQueue)
-		{
-			persistDocumentMetadataMessageInQueue = true;
-
-			storageController.incrementQueueSize();
-			sendPersistDocumentMetadataMessage();
-		}
+		sendPersistDocumentMetadataMessage();
 
 		// We have to decrement the queue size AFTER we added a possible retry message
 		// Otherwise the queueSize could drop to 0 and the system would continue with shutdown
 		storageController.incrementDocumentPersisted();
+	}
+
+	private void processRemoveDocumentFromMetadata(final ControlMessage message)
+	{
+		documentMetadataMap.remove(message.getContent());
+
+		sendPersistDocumentMetadataMessage();
+
+		storageController.incrementDataDeleted();
 	}
 
 	private void processReceivedTimeout()

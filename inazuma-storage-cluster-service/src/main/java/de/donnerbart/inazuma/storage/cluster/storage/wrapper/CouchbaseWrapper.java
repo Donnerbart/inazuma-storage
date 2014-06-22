@@ -1,10 +1,9 @@
 package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
 import rx.Observable;
-
-import java.util.concurrent.ExecutionException;
 
 public class CouchbaseWrapper
 {
@@ -25,8 +24,8 @@ public class CouchbaseWrapper
 		return bucket.upsert(StringDocument.create(key, document));
 	}
 
-	public void deleteDocument(final String key) throws ExecutionException, InterruptedException
+	public Observable<JsonDocument> deleteDocument(final String key)
 	{
-		bucket.remove(key);
+		return bucket.remove(key);
 	}
 }
