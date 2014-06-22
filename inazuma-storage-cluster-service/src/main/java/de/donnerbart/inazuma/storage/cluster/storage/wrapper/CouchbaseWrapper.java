@@ -20,9 +20,9 @@ public class CouchbaseWrapper
 		return bucket.get(id, StringDocument.class);
 	}
 
-	public void insertDocument(final String key, final String document)
+	public Observable<StringDocument> insertDocument(final String key, final String document)
 	{
-		bucket.upsert(StringDocument.create(key, document)).toBlocking().single();
+		return bucket.upsert(StringDocument.create(key, document));
 	}
 
 	public void deleteDocument(final String key) throws ExecutionException, InterruptedException

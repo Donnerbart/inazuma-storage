@@ -107,6 +107,11 @@ class MessageProcessor extends UntypedActor
 					processCreateDocumentMetadataMessage(controlMessage);
 					break;
 				}
+				case ADD_DOCUMENT_TO_METADATA:
+				{
+					processAddDocumentToMetadata((AddDocumentToMetadataControlMessage) controlMessage);
+					break;
+				}
 				default:
 				{
 					unhandled(message);
@@ -145,6 +150,14 @@ class MessageProcessor extends UntypedActor
 		storageController.getCouchbaseWrapper().getDocument(
 				message.getKey()
 		).doOnNext(document -> {
+			if (!document.status().isSuccess())
+			{
+				log.debug("Could not load document for user {}: {}", userID, document);
+				sendDelayedMessage(message);
+
+				return;
+			}
+
 			((BaseCallbackMessageWithKey<String>) message).setResult(document.content());
 			storageController.incrementDocumentFetched();
 		}).subscribe();
@@ -152,37 +165,23 @@ class MessageProcessor extends UntypedActor
 
 	private void processPersistDocument(final AddDocumentMessage message)
 	{
-		try
-		{
-			storageController.getCouchbaseWrapper().insertDocument(
-					message.getKey(),
-					message.getJson()
-			);
-		}
-		catch (Exception e)
-		{
-			log.debug("Could not add {} for user {}: {}", message.getKey(), userID, e.getMessage());
+		storageController.getCouchbaseWrapper().insertDocument(
+				message.getKey(),
+				message.getJson()
+		).doOnNext(document -> {
+			if (!document.status().isSuccess())
+			{
+				log.debug("Could not load document for user {}: {}", userID, document);
+				sendDelayedMessage(message);
+				storageController.incrementDocumentRetries();
 
-			storageController.incrementDocumentRetries();
-			sendDelayedMessage(message);
+				return;
+			}
 
-			return;
-		}
+			final DocumentMetadata documentMetadata = new DocumentMetadata(message);
+			self().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), self());
 
-		final DocumentMetadata documentMetadata = new DocumentMetadata(message);
-		documentMetadataMap.put(message.getKey(), documentMetadata);
-
-		if (!persistDocumentMetadataMessageInQueue)
-		{
-			persistDocumentMetadataMessageInQueue = true;
-
-			storageController.incrementQueueSize();
-			sendPersistDocumentMetadataMessage();
-		}
-
-		// We have to decrement the queue size AFTER we added a possible retry message
-		// Otherwise the queueSize could drop to 0 and the system would continue with shutdown
-		storageController.incrementDocumentPersisted();
+		}).subscribe();
 	}
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
@@ -197,9 +196,8 @@ class MessageProcessor extends UntypedActor
 		catch (Exception e)
 		{
 			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e.getMessage());
-
-			storageController.incrementDocumentRetries();
 			sendDelayedMessage(message);
+			storageController.incrementDocumentRetries();
 
 			return;
 		}
@@ -224,24 +222,22 @@ class MessageProcessor extends UntypedActor
 	{
 		persistDocumentMetadataMessageInQueue = false;
 
-		try
-		{
-			storageController.getCouchbaseWrapper().insertDocument(
-					DocumentMetadataUtil.createKeyFromUserID(userID),
-					GsonWrapper.toJson(documentMetadataMap)
-			);
-		}
-		catch (Exception e)
-		{
-			log.debug("Could not store document metadata for user {}: {}", userID, e.getMessage());
+		storageController.getCouchbaseWrapper().insertDocument(
+				DocumentMetadataUtil.createKeyFromUserID(userID),
+				GsonWrapper.toJson(documentMetadataMap)
+		).doOnNext(document -> {
+			if (!document.status().isSuccess())
+			{
+				log.debug("Could not store document metadata for user {}: {}", userID, document);
+				sendDelayedMessage(message);
+				storageController.incrementMetadataRetries();
 
-			storageController.incrementMetadataRetries();
-			sendDelayedMessage(message);
+				return;
+			}
 
-			return;
-		}
+			storageController.incrementMetadataPersisted();
 
-		storageController.incrementMetadataPersisted();
+		}).subscribe();
 	}
 
 	private void processLoadDocumentMetadataMessage(final ControlMessage message)
@@ -269,6 +265,23 @@ class MessageProcessor extends UntypedActor
 			log.debug("Could not create document metadata for user {}: {}", userID, message.getContent());
 			sendDelayedMessage(message);
 		}
+	}
+
+	private void processAddDocumentToMetadata(final AddDocumentToMetadataControlMessage message)
+	{
+		documentMetadataMap.put(message.getContent(), message.getMetadata());
+
+		if (!persistDocumentMetadataMessageInQueue)
+		{
+			persistDocumentMetadataMessageInQueue = true;
+
+			storageController.incrementQueueSize();
+			sendPersistDocumentMetadataMessage();
+		}
+
+		// We have to decrement the queue size AFTER we added a possible retry message
+		// Otherwise the queueSize could drop to 0 and the system would continue with shutdown
+		storageController.incrementDocumentPersisted();
 	}
 
 	private void processReceivedTimeout()

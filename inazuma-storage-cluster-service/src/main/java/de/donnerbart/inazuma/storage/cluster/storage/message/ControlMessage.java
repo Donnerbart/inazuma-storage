@@ -18,7 +18,7 @@ public class ControlMessage
 		}
 	}
 
-	private ControlMessage(final ControlMessageType type, final String content)
+	ControlMessage(final ControlMessageType type, final String content)
 	{
 		this.type = type;
 		this.content = content;
