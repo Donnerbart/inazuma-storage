@@ -1,5 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
+import com.couchbase.client.core.message.ResponseStatus;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.StringDocument;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
@@ -9,6 +10,7 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -88,16 +90,16 @@ public class StorageControllerAddDocumentTest
 	public void addFirstDocument()
 	{
 		//when(bucket.upsert(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON).toBlockingObservable().single()).thenReturn(futureTrue);
-		when(bucket.get(DOCUMENT_METADATA_KEY_USER_1, StringDocument.class).toBlocking().single().content()).thenReturn(null);
-		//when(bucket.set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
+		whenBucketGetReturnEmptyDocument(DOCUMENT_METADATA_KEY_USER_1, ResponseStatus.SUCCESS);
+		//when(bucket.upsert(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1)).thenReturn(futureTrue);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
 		storageController.awaitShutdown();
 
-		//verify(bucket).set(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
-		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1);
-		//verify(bucket).set(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
+		//verify(bucket).upsert(DOCUMENT_1_KEY, 0, DOCUMENT_1_JSON);
+		verify(bucket).get(DOCUMENT_METADATA_KEY_USER_1, StringDocument.class);
+		//verify(bucket).upsert(DOCUMENT_METADATA_KEY_USER_1, 0, DOCUMENT_METADATA_JSON_1);
 		verifyZeroInteractions(bucket);
 	}
 
@@ -283,4 +285,9 @@ public class StorageControllerAddDocumentTest
 		verifyZeroInteractions(bucket);
 	}
 	*/
+
+	private void whenBucketGetReturnEmptyDocument(final String id, final ResponseStatus responseStatus)
+	{
+		when(bucket.get(id, StringDocument.class)).thenReturn(Observable.just(StringDocument.create(id, null, 0, 0, responseStatus)));
+	}
 }
