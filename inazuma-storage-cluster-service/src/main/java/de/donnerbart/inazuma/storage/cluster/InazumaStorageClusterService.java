@@ -1,6 +1,5 @@
 package de.donnerbart.inazuma.storage.cluster;
 
-import com.couchbase.client.java.Bucket;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
@@ -10,6 +9,8 @@ import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,17 +25,17 @@ public class InazumaStorageClusterService
 		// Get Hazelcast instance
 		final HazelcastInstance hz = HazelcastManager.getInstance();
 
-		// Get Couchbase bucket
-		final Bucket bucket = CouchbaseManager.getBucket();
+		// Get Couchbase instance
+		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(CouchbaseManager.getBucket());
 
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");
 
-		// Startup storage wrapper
-		final StorageControllerFacade storageController = new StorageController(bucket);
+		// Start StorageController
+		final StorageControllerFacade storageController = new StorageController(databaseWrapper);
 		storageControllerReference.set(storageController);
 
-		// Startup request wrapper
+		// Start RequestController
 		new RequestController(hz, storageController);
 
 		// Create shutdown event

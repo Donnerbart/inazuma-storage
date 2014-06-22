@@ -1,10 +1,10 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 public interface StorageControllerInternalFacade
 {
-	CouchbaseWrapper getCouchbaseWrapper();
+	DatabaseWrapper getDatabaseWrapper();
 
 	void incrementQueueSize();
 

@@ -4,6 +4,7 @@ import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.couchbase.client.core.message.ResponseStatus;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
@@ -11,6 +12,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import scala.concurrent.duration.Duration;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -157,10 +159,10 @@ class MessageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocument(final BaseMessageWithKey message)
 	{
-		storageController.getCouchbaseWrapper().getDocument(
+		storageController.getDatabaseWrapper().getDocument(
 				message.getKey()
 		).doOnNext(document -> {
-			if (!document.status().isSuccess())
+			if (!document.status().isSuccess() && document.status() != ResponseStatus.NOT_EXISTS)
 			{
 				log.debug("Could not load document for user {}: {}", userID, document);
 				sendDelayedMessage(message);
@@ -175,7 +177,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processPersistDocument(final AddDocumentMessage message)
 	{
-		storageController.getCouchbaseWrapper().insertDocument(
+		storageController.getDatabaseWrapper().insertDocument(
 				message.getKey(),
 				message.getJson()
 		).doOnNext(document -> {
@@ -196,7 +198,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
 	{
-		storageController.getCouchbaseWrapper().deleteDocument(
+		storageController.getDatabaseWrapper().deleteDocument(
 				message.getKey()
 		).doOnNext(document -> {
 			if (!document.status().isSuccess())
@@ -229,7 +231,7 @@ class MessageProcessor extends UntypedActor
 	{
 		persistDocumentMetadataMessageInQueue = false;
 
-		storageController.getCouchbaseWrapper().insertDocument(
+		storageController.getDatabaseWrapper().insertDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID),
 				GsonWrapper.toJson(documentMetadataMap)
 		).doOnNext(document -> {
@@ -249,10 +251,10 @@ class MessageProcessor extends UntypedActor
 
 	private void processLoadDocumentMetadataMessage(final ControlMessage message)
 	{
-		storageController.getCouchbaseWrapper().getDocument(
+		storageController.getDatabaseWrapper().getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).doOnNext(document -> {
-			if (!document.status().isSuccess())
+			if (!document.status().isSuccess() && document.status() != ResponseStatus.NOT_EXISTS)
 			{
 				log.debug("Could not load document metadata for user {}: {}", userID, document);
 				sendDelayedMessage(message);
@@ -266,11 +268,19 @@ class MessageProcessor extends UntypedActor
 
 	private void processCreateDocumentMetadataMessage(final ControlMessage message)
 	{
-		documentMetadataMap = GsonWrapper.getDocumentMetadataMap(message.getContent());
+		final String json = message.getContent();
+		if (json == null)
+		{
+			documentMetadataMap = new HashMap<>();
+
+			return;
+		}
+
+		documentMetadataMap = GsonWrapper.getDocumentMetadataMap(json);
 		if (documentMetadataMap == null)
 		{
-			log.debug("Could not create document metadata for user {}: {}", userID, message.getContent());
-			sendDelayedMessage(message);
+			log.debug("Could not create document metadata for user {}: {}", userID, json);
+			sendDelayedMessage(ControlMessage.create(ControlMessageType.LOAD_DOCUMENT_METADATA));
 		}
 	}
 

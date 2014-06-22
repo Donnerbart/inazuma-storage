@@ -5,7 +5,7 @@ import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
 import rx.Observable;
 
-public class CouchbaseWrapper
+public class CouchbaseWrapper implements DatabaseWrapper
 {
 	private final Bucket bucket;
 
@@ -24,8 +24,8 @@ public class CouchbaseWrapper
 		return bucket.upsert(StringDocument.create(key, document));
 	}
 
-	public Observable<JsonDocument> deleteDocument(final String key)
+	public Observable<JsonDocument> deleteDocument(final String id)
 	{
-		return bucket.remove(key);
+		return bucket.remove(id);
 	}
 }

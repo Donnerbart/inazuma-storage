@@ -3,7 +3,6 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
-import com.couchbase.client.java.Bucket;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
@@ -11,14 +10,14 @@ import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class StorageController implements StorageControllerFacade, StorageControllerInternalFacade
 {
-	private final CouchbaseWrapper couchbaseWrapper;
+	private final DatabaseWrapper databaseWrapper;
 	private final ActorSystem actorSystem;
 	private final ActorRef theReaper;
 	private final ActorRef messageDispatcher;
@@ -40,9 +39,9 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private final BasicStatisticValue documentRetries = new BasicStatisticValue("StorageController", "retriesDocument");
 	private final BasicStatisticValue documentPersisted = new BasicStatisticValue("StorageController", "persistedDocument");
 
-	public StorageController(final Bucket bucket)
+	public StorageController(final DatabaseWrapper databaseWrapper)
 	{
-		this.couchbaseWrapper = new CouchbaseWrapper(bucket);
+		this.databaseWrapper = databaseWrapper;
 
 		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
 		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
@@ -132,9 +131,9 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	}
 
 	@Override
-	public CouchbaseWrapper getCouchbaseWrapper()
+	public DatabaseWrapper getDatabaseWrapper()
 	{
-		return couchbaseWrapper;
+		return databaseWrapper;
 	}
 
 	@Override
