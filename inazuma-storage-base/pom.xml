@@ -24,10 +24,6 @@
             <artifactId>hazelcast-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>couchbase-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.carrotsearch</groupId>
             <artifactId>hppc</artifactId>
         </dependency>

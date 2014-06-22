@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.base.manager;
+package de.donnerbart.inazuma.storage.cluster.storage.manager;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;

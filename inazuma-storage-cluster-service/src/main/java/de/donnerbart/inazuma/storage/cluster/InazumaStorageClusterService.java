@@ -3,7 +3,7 @@ package de.donnerbart.inazuma.storage.cluster;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
-import de.donnerbart.inazuma.storage.base.manager.CouchbaseManager;
+import de.donnerbart.inazuma.storage.cluster.storage.manager.CouchbaseManager;
 import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
