@@ -6,6 +6,8 @@ import akka.actor.UntypedActor;
 import akka.dispatch.sysmsg.Terminate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
 
 class DeadLetterListener extends UntypedActor
 {
@@ -20,8 +22,23 @@ class DeadLetterListener extends UntypedActor
 			final Object deadMessage = deadLetter.message();
 			if (!(deadMessage instanceof Terminate) && !(deadMessage instanceof PoisonPill))
 			{
+				if (deadMessage instanceof ControlMessage)
+				{
+					final ControlMessage controlMessage = (ControlMessage) deadMessage;
+					log.error("Received control message of type {} with content {} for actor {}", controlMessage.getType(), controlMessage.getContent(), deadLetter.recipient());
+
+					return;
+
+				}
+				else if (deadMessage instanceof BaseMessage)
+				{
+					final BaseMessage baseMessage = (BaseMessage) deadMessage;
+					log.error("Received base message of type {} with content {} for actor {}", baseMessage.getType(), baseMessage.getUserID(), deadLetter.recipient());
+
+					return;
+				}
+
 				log.error("Received dead letter {} for actor {}", deadLetter.message(), deadLetter.recipient());
-				//throw new RuntimeException("Received dead letter " + deadLetter.message() + " for actor " + deadLetter.recipient());
 			}
 		}
 	}
