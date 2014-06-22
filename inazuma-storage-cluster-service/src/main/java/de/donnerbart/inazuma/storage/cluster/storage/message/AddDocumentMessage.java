@@ -7,7 +7,7 @@ public class AddDocumentMessage extends BaseMessageWithKey
 
 	public AddDocumentMessage(final String userID, final String key, final String json, final long created)
 	{
-		super(MessageType.ADD_DOCUMENT, userID, key);
+		super(MessageType.PERSIST_DOCUMENT, userID, key);
 		this.json = json;
 		this.created = created;
 	}

@@ -5,6 +5,7 @@ import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
 
 import java.util.HashMap;
@@ -24,31 +25,38 @@ class MessageDispatcher extends UntypedActor
 		this.storageController = storageController;
 		this.theReaper = theReaper;
 
-		theReaper.tell(ControlMessageType.WATCH_ME, self());
+		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), self());
 	}
 
 	@Override
 	public void onReceive(final Object message) throws Exception
 	{
-		if (message instanceof BaseMessage && running)
+		if (message instanceof BaseMessage)
 		{
-			final BaseMessage baseMessage = (BaseMessage) message;
-			switch (baseMessage.getType())
+			if (!running)
 			{
-				case ADD_DOCUMENT:
-				case FETCH_DOCUMENT:
-				case DELETE_DOCUMENT:
-				case LOAD_DOCUMENT_METADATA:
-				case FETCH_DOCUMENT_METADATA:
-				case PERSIST_DOCUMENT_METADATA:
+				unhandled(message);
+
+				return;
+			}
+
+			final BaseMessage baseMessage = (BaseMessage) message;
+			processBaseMessage(baseMessage.getUserID()).tell(message, self());
+		}
+		else if (message instanceof ControlMessage)
+		{
+			final ControlMessage controlMessage = (ControlMessage) message;
+			switch (controlMessage.getType())
+			{
+				case REMOVE_IDLE_MESSAGE_PROCESSOR:
 				{
-					findOrCreateProcessorFor(baseMessage.getUserID()).tell(message, self());
+					messageProcessorByUserID.remove(controlMessage.getContent());
+					sender().tell(PoisonPill.getInstance(), self());
 					break;
 				}
-				case MESSAGE_PROCESSOR_IDLE:
+				case SHUTDOWN:
 				{
-					messageProcessorByUserID.remove(baseMessage.getUserID());
-					sender().tell(PoisonPill.getInstance(), self());
+					processShutdown();
 					break;
 				}
 				default:
@@ -57,17 +65,13 @@ class MessageDispatcher extends UntypedActor
 				}
 			}
 		}
-		else if (message == ControlMessageType.SHUTDOWN)
-		{
-			initShutdown();
-		}
 		else
 		{
 			unhandled(message);
 		}
 	}
 
-	private ActorRef findOrCreateProcessorFor(final String userID)
+	private ActorRef processBaseMessage(final String userID)
 	{
 		final ActorRef maybeActor = messageProcessorByUserID.get(userID);
 		if (maybeActor != null)
@@ -76,7 +80,7 @@ class MessageDispatcher extends UntypedActor
 		}
 
 		final ActorRef messageProcessor = ActorFactory.createMessageProcessor(context(), storageController, userID);
-		theReaper.tell(ControlMessageType.WATCH_ME, messageProcessor);
+		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), messageProcessor);
 
 		final ActorRef previousActor = messageProcessorByUserID.putIfAbsent(userID, messageProcessor);
 		if (previousActor != null)
@@ -89,7 +93,7 @@ class MessageDispatcher extends UntypedActor
 		return messageProcessor;
 	}
 
-	private void initShutdown()
+	private void processShutdown()
 	{
 		running = false;
 

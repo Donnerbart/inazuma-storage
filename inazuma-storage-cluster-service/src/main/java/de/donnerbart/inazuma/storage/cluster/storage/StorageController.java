@@ -113,13 +113,13 @@ public class StorageController implements StorageControllerFacade, StorageContro
 			callbackEmptyQueue.getResult();
 		}
 
-		messageDispatcher.tell(ControlMessageType.SHUTDOWN, ActorRef.noSender());
+		messageDispatcher.tell(ControlMessage.create(ControlMessageType.SHUTDOWN), ActorRef.noSender());
 	}
 
 	@Override
 	public void awaitShutdown()
 	{
-		theReaper.tell(ControlMessageType.REPORT_WATCH_COUNT, ActorRef.noSender());
+		theReaper.tell(ControlMessage.create(ControlMessageType.REPORT_WATCH_COUNT), ActorRef.noSender());
 		final int actorCount = callbackReportWatchedActorCount.getResult();
 
 		if (actorCount > 0)

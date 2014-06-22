@@ -11,7 +11,6 @@ import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import scala.concurrent.duration.Duration;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -25,16 +24,15 @@ class MessageProcessor extends UntypedActor
 
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
-	private boolean isReady = false;
+	private Map<String, DocumentMetadata> documentMetadataMap = null;
 	private boolean persistDocumentMetadataMessageInQueue = false;
-	private Map<String, DocumentMetadata> documentMetadataMap = new HashMap<>();
 
 	public MessageProcessor(final StorageControllerInternalFacade storageController, final String userID)
 	{
 		this.storageController = storageController;
 		this.userID = userID;
 
-		processLoadDocumentMetadataMessage(new BaseMessage(MessageType.LOAD_DOCUMENT_METADATA, userID));
+		processLoadDocumentMetadataMessage(ControlMessage.create(ControlMessageType.LOAD_DOCUMENT_METADATA));
 	}
 
 	@Override
@@ -46,34 +44,24 @@ class MessageProcessor extends UntypedActor
 	@Override
 	public void onReceive(final Object message) throws Exception
 	{
-		if (message instanceof ReceiveTimeout)
+		if (message instanceof BaseMessage)
 		{
-			processReceivedTimeout();
-			return;
-		}
+			if (documentMetadataMap == null)
+			{
+				sendDelayedMessage(message);
 
-		final BaseMessage baseMessage = (message instanceof BaseMessage) ? (BaseMessage) message : null;
-		if (baseMessage != null && baseMessage.getType() == MessageType.LOAD_DOCUMENT_METADATA)
-		{
-			processLoadDocumentMetadataMessage(baseMessage);
-			return;
-		}
-		else if (!isReady)
-		{
-			sendDelayedMessage(message);
-			return;
-		}
+				return;
+			}
 
-		if (baseMessage != null)
-		{
+			final BaseMessage baseMessage = (BaseMessage) message;
 			switch (baseMessage.getType())
 			{
-				case PERSIST_DOCUMENT_METADATA:
+				case FETCH_DOCUMENT:
 				{
-					processPersistDocumentMetadata(baseMessage);
+					processFetchDocument((BaseMessageWithKey) message);
 					break;
 				}
-				case ADD_DOCUMENT:
+				case PERSIST_DOCUMENT:
 				{
 					processPersistDocument((AddDocumentMessage) message);
 					break;
@@ -83,9 +71,9 @@ class MessageProcessor extends UntypedActor
 					processDeleteDocument((BaseMessageWithKey) message);
 					break;
 				}
-				case FETCH_DOCUMENT:
+				case MARK_DOCUMENT_AS_READ:
 				{
-					processFetchDocument((BaseMessageWithKey) message);
+					processMarkDocumentAsRead((BaseMessageWithKey) baseMessage);
 					break;
 				}
 				case FETCH_DOCUMENT_METADATA:
@@ -93,9 +81,9 @@ class MessageProcessor extends UntypedActor
 					processFetchDocumentMetadata(baseMessage);
 					break;
 				}
-				case MARK_DOCUMENT_AS_READ:
+				case PERSIST_DOCUMENT_METADATA:
 				{
-					processMarkDocumentAsRead((BaseMessageWithKey) baseMessage);
+					processPersistDocumentMetadata(baseMessage);
 					break;
 				}
 				default:
@@ -103,6 +91,31 @@ class MessageProcessor extends UntypedActor
 					unhandled(message);
 				}
 			}
+		}
+		else if (message instanceof ControlMessage)
+		{
+			final ControlMessage controlMessage = (ControlMessage) message;
+			switch (controlMessage.getType())
+			{
+				case LOAD_DOCUMENT_METADATA:
+				{
+					processLoadDocumentMetadataMessage(controlMessage);
+					break;
+				}
+				case CREATE_METADATA_DOCUMENT:
+				{
+					processCreateDocumentMetadataMessage(controlMessage);
+					break;
+				}
+				default:
+				{
+					unhandled(message);
+				}
+			}
+		}
+		else if (message instanceof ReceiveTimeout)
+		{
+			processReceivedTimeout();
 		}
 		else
 		{
@@ -126,63 +139,15 @@ class MessageProcessor extends UntypedActor
 		self().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 	}
 
-	private void processReceivedTimeout()
-	{
-		isReady = false;
-		documentMetadataMap.clear();
-
-		context().parent().tell(new BaseMessage(MessageType.MESSAGE_PROCESSOR_IDLE, userID), self());
-	}
-
-	private void processLoadDocumentMetadataMessage(final BaseMessage message)
+	@SuppressWarnings("unchecked")
+	private void processFetchDocument(final BaseMessageWithKey message)
 	{
 		storageController.getCouchbaseWrapper().getDocument(
-				DocumentMetadataUtil.createKeyFromUserID(userID)
+				message.getKey()
 		).doOnNext(document -> {
-			if (document != null)
-			{
-				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(document.content());
-				if (documentMetadataMap == null)
-				{
-					log.debug("Could not create document metadata for user {}: {}", userID, document.content());
-					sendDelayedMessage(message);
-
-					return;
-				}
-
-				isReady = true;
-			}
+			((BaseCallbackMessageWithKey<String>) message).setResult(document.content());
+			storageController.incrementDocumentFetched();
 		}).subscribe();
-	}
-
-	private void processPersistDocumentMetadata(final BaseMessage message)
-	{
-		persistDocumentMetadataMessageInQueue = false;
-
-		try
-		{
-			storageController.getCouchbaseWrapper().insertDocument(
-					DocumentMetadataUtil.createKeyFromUserID(userID),
-					GsonWrapper.toJson(documentMetadataMap)
-			);
-		}
-		catch (Exception e)
-		{
-			log.debug("Could not store document metadata for user {}: {}", userID, e.getMessage());
-
-			storageController.incrementMetadataRetries();
-			sendDelayedMessage(message);
-
-			return;
-		}
-
-		storageController.incrementMetadataPersisted();
-	}
-
-	@SuppressWarnings("unchecked")
-	private void processFetchDocumentMetadata(final BaseMessage message)
-	{
-		((BaseCallbackMessage<String>) message).setResult(GsonWrapper.toJson(documentMetadataMap));
 	}
 
 	private void processPersistDocument(final AddDocumentMessage message)
@@ -216,19 +181,8 @@ class MessageProcessor extends UntypedActor
 		}
 
 		// We have to decrement the queue size AFTER we added a possible retry message
-		// Otherwise the queueSize could drop to 0 and the system continues with shutdown
+		// Otherwise the queueSize could drop to 0 and the system would continue with shutdown
 		storageController.incrementDocumentPersisted();
-	}
-
-	@SuppressWarnings("unchecked")
-	private void processFetchDocument(final BaseMessageWithKey message)
-	{
-		storageController.getCouchbaseWrapper().getDocument(
-				message.getKey()
-		).doOnNext(document -> {
-			((BaseCallbackMessageWithKey<String>) message).setResult(document.content());
-			storageController.incrementDocumentFetched();
-		}).subscribe();
 	}
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
@@ -258,5 +212,70 @@ class MessageProcessor extends UntypedActor
 		documentMetadataMap.get(baseMessage.getKey()).setRead(true);
 
 		sendPersistDocumentMetadataMessage();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void processFetchDocumentMetadata(final BaseMessage message)
+	{
+		((BaseCallbackMessage<String>) message).setResult(GsonWrapper.toJson(documentMetadataMap));
+	}
+
+	private void processPersistDocumentMetadata(final BaseMessage message)
+	{
+		persistDocumentMetadataMessageInQueue = false;
+
+		try
+		{
+			storageController.getCouchbaseWrapper().insertDocument(
+					DocumentMetadataUtil.createKeyFromUserID(userID),
+					GsonWrapper.toJson(documentMetadataMap)
+			);
+		}
+		catch (Exception e)
+		{
+			log.debug("Could not store document metadata for user {}: {}", userID, e.getMessage());
+
+			storageController.incrementMetadataRetries();
+			sendDelayedMessage(message);
+
+			return;
+		}
+
+		storageController.incrementMetadataPersisted();
+	}
+
+	private void processLoadDocumentMetadataMessage(final ControlMessage message)
+	{
+		storageController.getCouchbaseWrapper().getDocument(
+				DocumentMetadataUtil.createKeyFromUserID(userID)
+		).doOnNext(document -> {
+			if (!document.status().isSuccess())
+			{
+				log.debug("Could not load document metadata for user {}: {}", userID, document);
+				sendDelayedMessage(message);
+
+				return;
+			}
+
+			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, document.content()), self());
+		}).subscribe();
+	}
+
+	private void processCreateDocumentMetadataMessage(final ControlMessage message)
+	{
+		documentMetadataMap = GsonWrapper.getDocumentMetadataMap(message.getContent());
+		if (documentMetadataMap == null)
+		{
+			log.debug("Could not create document metadata for user {}: {}", userID, message.getContent());
+			sendDelayedMessage(message);
+		}
+	}
+
+	private void processReceivedTimeout()
+	{
+		documentMetadataMap.clear();
+		documentMetadataMap = null;
+
+		context().parent().tell(ControlMessage.create(ControlMessageType.REMOVE_IDLE_MESSAGE_PROCESSOR, userID), self());
 	}
 }
