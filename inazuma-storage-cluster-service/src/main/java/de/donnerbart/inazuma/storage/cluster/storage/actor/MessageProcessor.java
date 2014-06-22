@@ -136,28 +136,23 @@ class MessageProcessor extends UntypedActor
 
 	private void processLoadDocumentMetadataMessage(final BaseMessage message)
 	{
-		try
-		{
-			final String documentMetadataJSON = storageController.getCouchbaseWrapper().getDocument(
-					DocumentMetadataUtil.createKeyFromUserID(userID)
-			);
-			if (documentMetadataJSON != null)
+		storageController.getCouchbaseWrapper().getDocument(
+				DocumentMetadataUtil.createKeyFromUserID(userID)
+		).doOnNext(document -> {
+			if (document != null)
 			{
-				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(documentMetadataJSON);
+				documentMetadataMap = GsonWrapper.getDocumentMetadataMap(document.content());
 				if (documentMetadataMap == null)
 				{
-					throw new RuntimeException("Document metadata for user " + userID + " is null! " + documentMetadataJSON);
+					log.debug("Could not create document metadata for user {}: {}", userID, document.content());
+					sendDelayedMessage(message);
+
+					return;
 				}
+
+				isReady = true;
 			}
-
-			isReady = true;
-		}
-		catch (Exception e)
-		{
-			log.debug("Could not create document metadata for user {}: {}", userID, e.getMessage());
-
-			sendDelayedMessage(message);
-		}
+		}).subscribe();
 	}
 
 	private void processPersistDocumentMetadata(final BaseMessage message)
@@ -228,12 +223,12 @@ class MessageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocument(final BaseMessageWithKey message)
 	{
-		final String document = storageController.getCouchbaseWrapper().getDocument(
+		storageController.getCouchbaseWrapper().getDocument(
 				message.getKey()
-		);
-		((BaseCallbackMessageWithKey<String>) message).setResult(document);
-
-		storageController.incrementDocumentFetched();
+		).doOnNext(document -> {
+			((BaseCallbackMessageWithKey<String>) message).setResult(document.content());
+			storageController.incrementDocumentFetched();
+		}).subscribe();
 	}
 
 	private void processDeleteDocument(final BaseMessageWithKey message)

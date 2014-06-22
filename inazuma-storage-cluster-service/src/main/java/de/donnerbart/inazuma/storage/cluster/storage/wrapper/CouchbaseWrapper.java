@@ -2,6 +2,7 @@ package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.StringDocument;
+import rx.Observable;
 
 import java.util.concurrent.ExecutionException;
 
@@ -14,11 +15,9 @@ public class CouchbaseWrapper
 		this.bucket = bucket;
 	}
 
-	public String getDocument(final String id)
+	public Observable<StringDocument> getDocument(final String id)
 	{
-		//final StringDocument document = bucket.get(id, StringDocument.class).toBlocking().single();
-		//return (document != null) ? document.content() : null;
-		return bucket.get(id, StringDocument.class).toBlocking().single().content();
+		return bucket.get(id, StringDocument.class);
 	}
 
 	public void insertDocument(final String key, final String document)
