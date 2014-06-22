@@ -13,7 +13,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public class StorageController implements StorageControllerFacade, StorageControllerInternalFacade
 {
@@ -22,7 +22,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private final ActorRef theReaper;
 	private final ActorRef messageDispatcher;
 
-	private final AtomicLong queueSize = new AtomicLong(0);
+	private final LongAdder queueSize = new LongAdder();
 
 	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
 	private final BlockingCallback<Object> callbackEmptyQueue = new BlockingCallback<>();
@@ -65,7 +65,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void addDocumentAsync(final String userID, final String key, final String json, final long created)
 	{
-		queueSize.incrementAndGet();
+		queueSize.increment();
 		documentAdded.increment();
 
 		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created);
@@ -75,7 +75,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public String getDocument(final String userID, final String key)
 	{
-		queueSize.incrementAndGet();
+		queueSize.increment();
 
 		final BaseCallbackMessageWithKey<String> message = new BaseCallbackMessageWithKey<>(MessageType.FETCH_DOCUMENT, userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
@@ -86,7 +86,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void deleteDocumentAsync(final String userID, final String key)
 	{
-		queueSize.incrementAndGet();
+		queueSize.increment();
 
 		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.DELETE_DOCUMENT, userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
@@ -95,7 +95,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void markDocumentAsReadAsync(final String userID, final String key)
 	{
-		queueSize.incrementAndGet();
+		queueSize.increment();
 
 		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
@@ -104,7 +104,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void shutdown()
 	{
-		final long queue = queueSize.get();
+		final long queue = queueSize.sum();
 		if (queue > 0)
 		{
 			System.out.println("Waiting for queue to get empty (" + queue + ")...");
@@ -139,7 +139,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void incrementQueueSize()
 	{
-		queueSize.incrementAndGet();
+		queueSize.increment();
 	}
 
 	@Override
@@ -184,12 +184,13 @@ public class StorageController implements StorageControllerFacade, StorageContro
 
 	long getQueueSize()
 	{
-		return queueSize.get();
+		return queueSize.sum();
 	}
 
 	private void decrementQueueSize()
 	{
-		final long queue = queueSize.decrementAndGet();
+		queueSize.decrement();
+		final long queue = queueSize.sum();
 		if (notifyEmptyQueue.get() && queue == 0)
 		{
 			callbackEmptyQueue.setResult(null);

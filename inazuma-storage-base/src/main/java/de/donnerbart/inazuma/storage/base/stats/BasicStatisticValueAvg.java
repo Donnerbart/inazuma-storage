@@ -1,13 +1,13 @@
 package de.donnerbart.inazuma.storage.base.stats;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 @SuppressWarnings("unused")
 public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 {
-	private final AtomicLong timeRangeValue = new AtomicLong(0);
-	private final AtomicLong invocations = new AtomicLong(0);
+	private final LongAdder timeRangeValue = new LongAdder();
+	private final LongAdder invocations = new LongAdder();
 
 	public BasicStatisticValueAvg(final String group, final String name, final long duration, final TimeUnit timeUnit, final boolean autoRegister)
 	{
@@ -42,8 +42,8 @@ public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 
 	public void increment(final long value)
 	{
-		timeRangeValue.addAndGet(value);
-		invocations.incrementAndGet();
+		timeRangeValue.add(value);
+		invocations.increment();
 	}
 
 	@Override
@@ -55,8 +55,8 @@ public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 	@Override
 	protected void swapValue()
 	{
-		final double value = timeRangeValue.getAndSet(0);
-		final long inv = invocations.getAndSet(0);
+		final double value = timeRangeValue.sumThenReset();
+		final long inv = invocations.sumThenReset();
 		lastTimeRangedValueAvg = (inv == 0) ? 0L : Math.round(value / inv);
 	}
 }

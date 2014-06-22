@@ -3,18 +3,20 @@ package de.donnerbart.inazuma.storage.base.stats;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 @SuppressWarnings("unused")
 public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 {
-	private final AtomicLong timeRangeValue = new AtomicLong(0);
+	private final LongAdder timeRangeValue = new LongAdder();
 	private final AtomicLong timeRangeValueMin = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong timeRangeValueMax = new AtomicLong(Long.MIN_VALUE);
-	private final AtomicLong invocations = new AtomicLong(0);
+	private final LongAdder invocations = new LongAdder();
 
 	public AdvancedStatisticValue(final String group, final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options, final boolean autoRegister)
 	{
 		super(group, name, duration, timeUnit);
+
 		stats.addAll(options);
 		if (showSum())
 		{
@@ -64,8 +66,8 @@ public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 
 	public void increment(final long value)
 	{
-		timeRangeValue.addAndGet(value);
-		invocations.incrementAndGet();
+		timeRangeValue.add(value);
+		invocations.increment();
 		final long oldMin = timeRangeValueMin.get();
 		if (value < oldMin)
 		{
@@ -87,8 +89,8 @@ public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 	@Override
 	protected void swapValue()
 	{
-		final long value = timeRangeValue.getAndSet(0);
-		final long inv = invocations.getAndSet(0);
+		final long value = timeRangeValue.sumThenReset();
+		final long inv = invocations.sumThenReset();
 		if (showSum())
 		{
 			lastTimeRangedValueDefault = value;
