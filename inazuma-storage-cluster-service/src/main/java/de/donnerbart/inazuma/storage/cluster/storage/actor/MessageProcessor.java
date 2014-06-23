@@ -4,12 +4,12 @@ import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.couchbase.client.core.message.ResponseStatus;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
 import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;
@@ -161,18 +161,15 @@ class MessageProcessor extends UntypedActor
 	{
 		storageController.getDatabaseWrapper().getDocument(
 				message.getKey()
-		).doOnNext(document -> {
-			if (!document.status().isSuccess() && document.status() != ResponseStatus.NOT_EXISTS)
-			{
-				log.debug("Could not load document for user {}: {}", userID, document);
-				sendDelayedMessage(message);
+		).subscribe(response -> {
+			final String content = ((DatabaseGetResponse)response).getContent();
+			((BaseCallbackMessageWithKey<String>) message).setResult(content);
 
-				return;
-			}
-
-			((BaseCallbackMessageWithKey<String>) message).setResult(document.content());
 			storageController.incrementDocumentFetched();
-		}).subscribe();
+		}, e -> {
+			log.debug("Could not load document for user {}: {}", userID, e);
+			sendDelayedMessage(message);
+		});
 	}
 
 	private void processPersistDocument(final AddDocumentMessage message)
@@ -253,17 +250,13 @@ class MessageProcessor extends UntypedActor
 	{
 		storageController.getDatabaseWrapper().getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
-		).doOnNext(document -> {
-			if (!document.status().isSuccess() && document.status() != ResponseStatus.NOT_EXISTS)
-			{
-				log.debug("Could not load document metadata for user {}: {}", userID, document);
-				sendDelayedMessage(message);
-
-				return;
-			}
-
-			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, document.content()), self());
-		}).subscribe();
+		).subscribe(response -> {
+			final String content = ((DatabaseGetResponse)response).getContent();
+			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, content), self());
+		}, e -> {
+			log.debug("Could not load document metadata for user {}: {}", userID, e);
+			sendDelayedMessage(message);
+		});
 	}
 
 	private void processCreateDocumentMetadataMessage(final ControlMessage message)

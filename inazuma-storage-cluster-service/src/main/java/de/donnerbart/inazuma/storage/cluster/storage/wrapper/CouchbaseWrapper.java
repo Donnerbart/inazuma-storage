@@ -1,8 +1,11 @@
 package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
+import com.couchbase.client.core.message.ResponseStatus;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseResponse;
 import rx.Observable;
 
 public class CouchbaseWrapper implements DatabaseWrapper
@@ -14,9 +17,15 @@ public class CouchbaseWrapper implements DatabaseWrapper
 		this.bucket = bucket;
 	}
 
-	public Observable<StringDocument> getDocument(final String id)
+	public Observable<DatabaseResponse> getDocument(final String id)
 	{
-		return bucket.get(id, StringDocument.class);
+		return bucket.get(id, StringDocument.class).map(document -> {
+			if (document.status().isSuccess() || document.status() == ResponseStatus.NOT_EXISTS)
+			{
+				return new DatabaseGetResponse(document.content());
+			}
+			throw new RuntimeException(document.status().toString());
+		});
 	}
 
 	public Observable<StringDocument> insertDocument(final String key, final String document)
