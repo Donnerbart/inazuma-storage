@@ -1,6 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage.message;
 
-import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 
 public class AddDocumentToMetadataControlMessage extends ControlMessage
 {

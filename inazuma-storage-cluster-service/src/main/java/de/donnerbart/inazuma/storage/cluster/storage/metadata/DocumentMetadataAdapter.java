@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.cluster.storage.model;
+package de.donnerbart.inazuma.storage.cluster.storage.metadata;
 
 import com.google.gson.*;
 

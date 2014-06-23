@@ -2,7 +2,7 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 
 import com.couchbase.client.core.message.ResponseStatus;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
-import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;

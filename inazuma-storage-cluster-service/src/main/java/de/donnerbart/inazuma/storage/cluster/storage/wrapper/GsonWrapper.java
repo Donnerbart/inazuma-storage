@@ -3,8 +3,8 @@ package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
-import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadataAdapter;
+import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadataAdapter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
