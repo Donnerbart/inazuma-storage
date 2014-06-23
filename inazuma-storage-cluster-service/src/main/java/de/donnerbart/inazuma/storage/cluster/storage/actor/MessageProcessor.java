@@ -177,20 +177,14 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().insertDocument(
 				message.getKey(),
 				message.getJson()
-		).doOnNext(document -> {
-			if (!document.status().isSuccess())
-			{
-				log.debug("Could not load document for user {}: {}", userID, document);
-				sendDelayedMessage(message);
-				storageController.incrementDocumentRetries();
-
-				return;
-			}
-
+		).subscribe(response -> {
 			final DocumentMetadata documentMetadata = new DocumentMetadata(message);
 			self().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), self());
-
-		}).subscribe();
+		}, e -> {
+			log.debug("Could not load document for user {}: {}", userID, e);
+			sendDelayedMessage(message);
+			storageController.incrementDocumentRetries();
+		});
 	}
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
@@ -231,19 +225,13 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().insertDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID),
 				GsonWrapper.toJson(documentMetadataMap)
-		).doOnNext(document -> {
-			if (!document.status().isSuccess())
-			{
-				log.debug("Could not store document metadata for user {}: {}", userID, document);
-				sendDelayedMessage(message);
-				storageController.incrementMetadataRetries();
-
-				return;
-			}
-
+		).subscribe(response -> {
 			storageController.incrementMetadataPersisted();
-
-		}).subscribe();
+		}, e -> {
+			log.debug("Could not store document metadata for user {}: {}", userID, e);
+			sendDelayedMessage(message);
+			storageController.incrementMetadataRetries();
+		});
 	}
 
 	private void processLoadDocumentMetadataMessage(final ControlMessage message)

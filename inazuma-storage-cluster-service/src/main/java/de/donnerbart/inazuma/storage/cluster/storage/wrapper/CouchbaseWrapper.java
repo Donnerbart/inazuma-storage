@@ -28,9 +28,15 @@ public class CouchbaseWrapper implements DatabaseWrapper
 		});
 	}
 
-	public Observable<StringDocument> insertDocument(final String key, final String document)
+	public Observable<DatabaseResponse> insertDocument(final String key, final String json)
 	{
-		return bucket.upsert(StringDocument.create(key, document));
+		return bucket.upsert(StringDocument.create(key, json)).map(document -> {
+			if (document.status().isSuccess() || document.status() == ResponseStatus.NOT_EXISTS)
+			{
+				return null;
+			}
+			throw new RuntimeException(document.status().toString());
+		});
 	}
 
 	public Observable<JsonDocument> deleteDocument(final String id)

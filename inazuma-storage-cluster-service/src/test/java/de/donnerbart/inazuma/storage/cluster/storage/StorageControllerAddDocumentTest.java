@@ -1,12 +1,11 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
 import com.couchbase.client.core.message.ResponseStatus;
-import com.couchbase.client.java.document.StringDocument;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
 import de.donnerbart.inazuma.storage.cluster.storage.model.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseResponse;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.*;
 
 public class StorageControllerAddDocumentTest
 {
-	private static final Observable<DatabaseResponse> DATABASE_GET_RESPONSE_EMPTY = Observable.just(new DatabaseGetResponse(null));
+	private static final Observable<DatabaseResponse> DATABASE_RESPONSE_SUCCESS = Observable.just(new DatabaseGetResponse(null));
 	private static final Observable<DatabaseResponse> DATABASE_RESPONSE_FAILURE = Observable.error(new RuntimeException(ResponseStatus.FAILURE.toString()));
 
 	private final static String ANY_USER_1 = "1000000";
@@ -94,9 +93,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addFirstDocument()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
@@ -112,8 +111,8 @@ public class StorageControllerAddDocumentTest
 	public void addSecondDocumentAfterFirstDocumentIsAlreadyPersisted()
 	{
 		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(Observable.just(new DatabaseGetResponse(DOCUMENT_METADATA_JSON_1)));
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_2_KEY, DOCUMENT_2_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_2_AFTER_1, ResponseStatus.SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_2_KEY, DOCUMENT_2_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_2_AFTER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
@@ -128,9 +127,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addSameDocumentTwice()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
@@ -146,9 +145,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addSingleDocumentWithFailureOnFirstDatabaseSet()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatusTwice(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.FAILURE, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
@@ -163,9 +162,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void persistDocumentMetadataWithFailureOnFirstDatabaseSet()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatusTwice(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.FAILURE, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
@@ -180,9 +179,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void persistDocumentMetadataWithFailureOnFirstAndSecondDatabaseSet()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatusThreeTimes(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.FAILURE, ResponseStatus.FAILURE, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
@@ -197,10 +196,10 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromSameUser()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_2_KEY, DOCUMENT_2_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatusTwice(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1_AND_2, ResponseStatus.FAILURE, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_2_KEY, DOCUMENT_2_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1_AND_2)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
@@ -217,12 +216,12 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void addDocumentMetadataWithFailureOnFirstDatabaseSetWithSecondDocumentOnQueueFromDifferentUser()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_2)).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_3_KEY, DOCUMENT_3_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatusTwice(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.FAILURE, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_2, DOCUMENT_METADATA_JSON_3, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_2)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_3_KEY, DOCUMENT_3_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_2, DOCUMENT_METADATA_JSON_3)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocumentAsync(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED);
@@ -241,9 +240,9 @@ public class StorageControllerAddDocumentTest
 	@Test
 	public void getDocumentMetadataFailureOnFirstDatabaseGet()
 	{
-		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_GET_RESPONSE_EMPTY);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_1_KEY, DOCUMENT_1_JSON, ResponseStatus.SUCCESS);
-		whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1, ResponseStatus.SUCCESS);
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_RESPONSE_FAILURE).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
@@ -253,44 +252,5 @@ public class StorageControllerAddDocumentTest
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
 		verify(databaseWrapper).insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1);
 		verifyZeroInteractions(databaseWrapper);
-	}
-
-	private void whenDatabaseWrapperInsertDocumentThenReturnResponseStatus(final String id, final String json, final ResponseStatus responseStatus)
-	{
-		when(databaseWrapper.insertDocument(id, json)).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, responseStatus)
-				)
-		);
-	}
-
-	private void whenDatabaseWrapperInsertDocumentThenReturnResponseStatusTwice(final String id, final String json, final ResponseStatus firstResponseStatus, final ResponseStatus secondResponseStatus)
-	{
-		when(databaseWrapper.insertDocument(id, json)).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, firstResponseStatus)
-				)
-		).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, secondResponseStatus)
-				)
-		);
-	}
-
-	private void whenDatabaseWrapperInsertDocumentThenReturnResponseStatusThreeTimes(final String id, final String json, final ResponseStatus firstResponseStatus, final ResponseStatus secondResponseStatus, final ResponseStatus thirdResponseStatus)
-	{
-		when(databaseWrapper.insertDocument(id, json)).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, firstResponseStatus)
-				)
-		).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, secondResponseStatus)
-				)
-		).thenReturn(
-				Observable.just(
-						StringDocument.create(id, json, 0, 0, thirdResponseStatus)
-				)
-		);
 	}
 }
