@@ -162,7 +162,7 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().getDocument(
 				message.getKey()
 		).subscribe(response -> {
-			final String content = ((DatabaseGetResponse)response).getContent();
+			final String content = ((DatabaseGetResponse) response).getContent();
 			((BaseCallbackMessageWithKey<String>) message).setResult(content);
 
 			storageController.incrementDocumentFetched();
@@ -191,18 +191,13 @@ class MessageProcessor extends UntypedActor
 	{
 		storageController.getDatabaseWrapper().deleteDocument(
 				message.getKey()
-		).doOnNext(document -> {
-			if (!document.status().isSuccess())
-			{
-				log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, document);
-				sendDelayedMessage(message);
-				storageController.incrementDocumentRetries();
-
-				return;
-			}
-
+		).subscribe(response -> {
 			self().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), self());
-		}).subscribe();
+		}, e -> {
+			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e);
+			sendDelayedMessage(message);
+			storageController.incrementDocumentRetries();
+		});
 	}
 
 	private void processMarkDocumentAsRead(final BaseMessageWithKey baseMessage)
@@ -239,8 +234,7 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
-			final String content = ((DatabaseGetResponse)response).getContent();
-			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, content), self());
+			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, ((DatabaseGetResponse) response).getContent()), self());
 		}, e -> {
 			log.debug("Could not load document metadata for user {}: {}", userID, e);
 			sendDelayedMessage(message);
