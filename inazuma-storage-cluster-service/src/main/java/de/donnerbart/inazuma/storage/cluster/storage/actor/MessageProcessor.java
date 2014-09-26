@@ -119,7 +119,7 @@ class MessageProcessor extends UntypedActor
 					break;
 				default:
 				{
-					unhandled(message);
+					unhandled(controlMessage);
 				}
 			}
 		}

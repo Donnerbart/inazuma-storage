@@ -47,7 +47,7 @@ class TheReaper extends UntypedActor
 				}
 				default:
 				{
-					unhandled(message);
+					unhandled(controlMessage);
 				}
 			}
 		}

@@ -33,15 +33,15 @@ class MessageDispatcher extends UntypedActor
 	{
 		if (message instanceof BaseMessage)
 		{
-			if (!running)
+			final BaseMessage baseMessage = (BaseMessage) message;
+			if (running)
 			{
-				unhandled(message);
+				processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
 
 				return;
 			}
 
-			final BaseMessage baseMessage = (BaseMessage) message;
-			processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
+			unhandled(baseMessage);
 		}
 		else if (message instanceof ControlMessage)
 		{
@@ -61,7 +61,7 @@ class MessageDispatcher extends UntypedActor
 				}
 				default:
 				{
-					unhandled(message);
+					unhandled(controlMessage);
 				}
 			}
 		}
