@@ -37,7 +37,7 @@ class TheReaper extends UntypedActor
 				case WATCH_ME:
 				{
 					++watchCounter;
-					context().watch(sender());
+					getContext().watch(sender());
 					break;
 				}
 				case REPORT_WATCH_COUNT:
@@ -61,6 +61,6 @@ class TheReaper extends UntypedActor
 	{
 		callbackAllSoulsReaped.setResult(null);
 
-		context().system().shutdown();
+		getContext().system().shutdown();
 	}
 }

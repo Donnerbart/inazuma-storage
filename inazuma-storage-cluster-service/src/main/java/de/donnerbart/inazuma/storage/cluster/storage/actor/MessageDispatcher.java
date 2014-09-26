@@ -25,7 +25,7 @@ class MessageDispatcher extends UntypedActor
 		this.storageController = storageController;
 		this.theReaper = theReaper;
 
-		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), self());
+		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), getSelf());
 	}
 
 	@Override
@@ -41,7 +41,7 @@ class MessageDispatcher extends UntypedActor
 			}
 
 			final BaseMessage baseMessage = (BaseMessage) message;
-			processBaseMessage(baseMessage.getUserID()).tell(message, self());
+			processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
 		}
 		else if (message instanceof ControlMessage)
 		{
@@ -51,7 +51,7 @@ class MessageDispatcher extends UntypedActor
 				case REMOVE_IDLE_MESSAGE_PROCESSOR:
 				{
 					messageProcessorByUserID.remove(controlMessage.getContent());
-					sender().tell(PoisonPill.getInstance(), self());
+					sender().tell(PoisonPill.getInstance(), getSelf());
 					break;
 				}
 				case SHUTDOWN:
@@ -79,13 +79,13 @@ class MessageDispatcher extends UntypedActor
 			return maybeActor;
 		}
 
-		final ActorRef messageProcessor = ActorFactory.createMessageProcessor(context(), storageController, userID);
+		final ActorRef messageProcessor = ActorFactory.createMessageProcessor(getContext(), storageController, userID);
 		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), messageProcessor);
 
 		final ActorRef previousActor = messageProcessorByUserID.putIfAbsent(userID, messageProcessor);
 		if (previousActor != null)
 		{
-			messageProcessor.tell(PoisonPill.getInstance(), self());
+			messageProcessor.tell(PoisonPill.getInstance(), getSelf());
 
 			return previousActor;
 		}
@@ -100,9 +100,9 @@ class MessageDispatcher extends UntypedActor
 		for (final String userID : messageProcessorByUserID.keySet())
 		{
 			final ActorRef messageProcessor = messageProcessorByUserID.get(userID);
-			messageProcessor.tell(PoisonPill.getInstance(), self());
+			messageProcessor.tell(PoisonPill.getInstance(), getSelf());
 		}
 
-		self().tell(PoisonPill.getInstance(), self());
+		getSelf().tell(PoisonPill.getInstance(), getSelf());
 	}
 }

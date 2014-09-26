@@ -40,7 +40,7 @@ class MessageProcessor extends UntypedActor
 	@Override
 	public void preStart() throws Exception
 	{
-		context().setReceiveTimeout(Duration.create(5, TimeUnit.MINUTES));
+		getContext().setReceiveTimeout(Duration.create(5, TimeUnit.MINUTES));
 	}
 
 	@Override
@@ -60,17 +60,17 @@ class MessageProcessor extends UntypedActor
 			{
 				case FETCH_DOCUMENT:
 				{
-					processFetchDocument((BaseMessageWithKey) message);
+					processFetchDocument((BaseMessageWithKey) baseMessage);
 					break;
 				}
 				case PERSIST_DOCUMENT:
 				{
-					processPersistDocument((AddDocumentMessage) message);
+					processPersistDocument((AddDocumentMessage) baseMessage);
 					break;
 				}
 				case DELETE_DOCUMENT:
 				{
-					processDeleteDocument((BaseMessageWithKey) message);
+					processDeleteDocument((BaseMessageWithKey) baseMessage);
 					break;
 				}
 				case MARK_DOCUMENT_AS_READ:
@@ -90,7 +90,7 @@ class MessageProcessor extends UntypedActor
 				}
 				default:
 				{
-					unhandled(message);
+					unhandled(baseMessage);
 				}
 			}
 		}
@@ -135,12 +135,12 @@ class MessageProcessor extends UntypedActor
 
 	private void sendDelayedMessage(final Object message)
 	{
-		context().system().scheduler().scheduleOnce(
+		getContext().system().scheduler().scheduleOnce(
 				Duration.create(DELAY, DELAY_UNIT),
-				self(),
+				getSelf(),
 				message,
-				context().system().dispatcher(),
-				self()
+				getContext().system().dispatcher(),
+				getSelf()
 		);
 	}
 
@@ -152,7 +152,7 @@ class MessageProcessor extends UntypedActor
 
 			storageController.incrementQueueSize();
 
-			self().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+			getSelf().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
 		}
 	}
 
@@ -179,7 +179,7 @@ class MessageProcessor extends UntypedActor
 				message.getJson()
 		).subscribe(response -> {
 			final DocumentMetadata documentMetadata = new DocumentMetadata(message);
-			self().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), self());
+			getSelf().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), getSelf());
 		}, e -> {
 			log.debug("Could not load document for user {}: {}", userID, e);
 			sendDelayedMessage(message);
@@ -192,7 +192,7 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().deleteDocument(
 				message.getKey()
 		).subscribe(response -> {
-			self().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), self());
+			getSelf().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), getSelf());
 		}, e -> {
 			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e);
 			sendDelayedMessage(message);
@@ -234,7 +234,7 @@ class MessageProcessor extends UntypedActor
 		storageController.getDatabaseWrapper().getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
-			self().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, ((DatabaseGetResponse) response).getContent()), self());
+			getSelf().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, ((DatabaseGetResponse) response).getContent()), getSelf());
 		}, e -> {
 			log.debug("Could not load document metadata for user {}: {}", userID, e);
 			sendDelayedMessage(message);
@@ -284,6 +284,6 @@ class MessageProcessor extends UntypedActor
 		documentMetadataMap.clear();
 		documentMetadataMap = null;
 
-		context().parent().tell(ControlMessage.create(ControlMessageType.REMOVE_IDLE_MESSAGE_PROCESSOR, userID), self());
+		getContext().parent().tell(ControlMessage.create(ControlMessageType.REMOVE_IDLE_MESSAGE_PROCESSOR, userID), getSelf());
 	}
 }
