@@ -11,7 +11,7 @@ public class CouchbaseManager
 
 	static
 	{
-		cluster = new CouchbaseCluster();
+		cluster = CouchbaseCluster.create();
 		bucket = cluster.openBucket("default").toBlocking().single();
 	}
 

@@ -181,7 +181,7 @@ class MessageProcessor extends UntypedActor
 			final DocumentMetadata documentMetadata = new DocumentMetadata(message);
 			getSelf().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), getSelf());
 		}, e -> {
-			log.debug("Could not load document for user {}: {}", userID, e);
+			log.debug("Could not persist document for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 			storageController.incrementDocumentRetries();
 		});
