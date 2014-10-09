@@ -39,24 +39,24 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.intellij</groupId>
-                <artifactId>annotations</artifactId>
-                <version>12.0</version>
-            </dependency>
-            <dependency>
                 <groupId>de.donnerbart</groupId>
                 <artifactId>inazuma-storage-base</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>
+                <groupId>com.intellij</groupId>
+                <artifactId>annotations</artifactId>
+                <version>12.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.hazelcast</groupId>
                 <artifactId>hazelcast</artifactId>
-                <version>3.2.2</version>
+                <version>3.3.1</version>
             </dependency>
             <dependency>
                 <groupId>com.hazelcast</groupId>
                 <artifactId>hazelcast-client</artifactId>
-                <version>3.2.2</version>
+                <version>3.3.1</version>
             </dependency>
             <dependency>
                 <groupId>com.couchbase.client</groupId>
@@ -71,7 +71,7 @@
             <dependency>
                 <groupId>com.carrotsearch</groupId>
                 <artifactId>hppc</artifactId>
-                <version>0.6.0</version>
+                <version>0.6.1</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
@@ -86,7 +86,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>1.9.5</version>
+                <version>1.10.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -98,14 +98,6 @@
                 <enabled>true</enabled>
             </snapshots>
             <url>http://repo.akka.io/snapshots/</url>
-        </repository>
-        <repository>
-            <id>couchbase</id>
-            <name>couchbase repo</name>
-            <url>http://files.couchbase.com/maven2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
         </repository>
     </repositories>
 </project>
