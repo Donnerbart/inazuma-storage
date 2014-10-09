@@ -3,22 +3,25 @@ package de.donnerbart.inazuma.storage.cluster.storage.actor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
+import akka.japi.pf.ReceiveBuilder;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
+import scala.PartialFunction;
+import scala.runtime.BoxedUnit;
 
 import java.util.HashMap;
 import java.util.Map;
 
 class MessageDispatcher extends UntypedActor
 {
+	private static final PartialFunction<Object, BoxedUnit> shutdownBehaviour = ReceiveBuilder.matchAny(null).build();
+
 	private final StorageController storageController;
 	private final ActorRef theReaper;
 
 	private final Map<String, ActorRef> messageProcessorByUserID = new HashMap<>();
-
-	private boolean running = true;
 
 	public MessageDispatcher(final StorageController storageController, final ActorRef theReaper)
 	{
@@ -34,14 +37,7 @@ class MessageDispatcher extends UntypedActor
 		if (message instanceof BaseMessage)
 		{
 			final BaseMessage baseMessage = (BaseMessage) message;
-			if (running)
-			{
-				processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
-
-				return;
-			}
-
-			unhandled(baseMessage);
+			processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
 		}
 		else if (message instanceof ControlMessage)
 		{
@@ -95,7 +91,7 @@ class MessageDispatcher extends UntypedActor
 
 	private void processShutdown()
 	{
-		running = false;
+		getContext().become(shutdownBehaviour, true);
 
 		for (final String userID : messageProcessorByUserID.keySet())
 		{
