@@ -26,7 +26,7 @@ public class InazumaStorageClusterService
 		final HazelcastInstance hz = HazelcastManager.getInstance();
 
 		// Get Couchbase instance
-		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(CouchbaseManager.getBucket());
+		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(CouchbaseManager.getAsyncBucket());
 
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");

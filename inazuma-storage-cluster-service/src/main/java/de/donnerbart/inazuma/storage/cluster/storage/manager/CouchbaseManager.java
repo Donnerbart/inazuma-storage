@@ -1,21 +1,21 @@
 package de.donnerbart.inazuma.storage.cluster.storage.manager;
 
-import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
 
 public class CouchbaseManager
 {
 	private static final Cluster cluster;
-	private static final Bucket bucket;
+	private static final AsyncBucket bucket;
 
 	static
 	{
 		cluster = CouchbaseCluster.create();
-		bucket = cluster.openBucket("default");
+		bucket = cluster.openBucket("default").async();
 	}
 
-	public static Bucket getBucket()
+	public static AsyncBucket getAsyncBucket()
 	{
 		return bucket;
 	}
