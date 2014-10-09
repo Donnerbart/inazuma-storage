@@ -254,7 +254,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processAddDocumentToMetadata(final AddDocumentToMetadataMessage message)
 	{
-		documentMetadataMap.put(message.getId(), message.getMetadata());
+		documentMetadataMap.put(message.getKey(), message.getMetadata());
 
 		sendPersistDocumentMetadataMessage();
 
@@ -265,7 +265,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processRemoveDocumentFromMetadata(final RemoveDocumentFromMetadataMessage message)
 	{
-		documentMetadataMap.remove(message.getId());
+		documentMetadataMap.remove(message.getKey());
 
 		sendPersistDocumentMetadataMessage();
 

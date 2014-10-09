@@ -2,15 +2,15 @@ package de.donnerbart.inazuma.storage.cluster.storage.message.control;
 
 public class RemoveDocumentFromMetadataMessage implements ControlMessage
 {
-	private final String id;
+	private final String key;
 
-	public RemoveDocumentFromMetadataMessage(final String id)
+	public RemoveDocumentFromMetadataMessage(final String key)
 	{
-		this.id = id;
+		this.key = key;
 	}
 
-	public String getId()
+	public String getKey()
 	{
-		return id;
+		return key;
 	}
 }

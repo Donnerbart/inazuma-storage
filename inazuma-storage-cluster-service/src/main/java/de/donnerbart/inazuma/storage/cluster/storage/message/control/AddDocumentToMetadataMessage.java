@@ -4,18 +4,18 @@ import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 
 public class AddDocumentToMetadataMessage implements ControlMessage
 {
-	private final String id;
+	private final String key;
 	private final DocumentMetadata metadata;
 
-	public AddDocumentToMetadataMessage(final String id, final DocumentMetadata metadata)
+	public AddDocumentToMetadataMessage(final String key, final DocumentMetadata metadata)
 	{
-		this.id = id;
+		this.key = key;
 		this.metadata = metadata;
 	}
 
-	public String getId()
+	public String getKey()
 	{
-		return id;
+		return key;
 	}
 
 	public DocumentMetadata getMetadata()
