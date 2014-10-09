@@ -17,16 +17,16 @@ public class CouchbaseWrapper implements DatabaseWrapper
 
 	public Observable<DatabaseResponse> getDocument(final String id)
 	{
-		return bucket.get(id, LegacyDocument.class).map(document -> new DatabaseGetResponse(document.content().toString()));
+		return bucket.async().get(id, LegacyDocument.class).map(document -> new DatabaseGetResponse(document.content().toString()));
 	}
 
 	public Observable<DatabaseResponse> insertDocument(final String key, final String json)
 	{
-		return bucket.upsert(LegacyDocument.create(key, json)).map(document -> null);
+		return bucket.async().upsert(LegacyDocument.create(key, json)).map(document -> null);
 	}
 
 	public Observable<DatabaseResponse> deleteDocument(final String id)
 	{
-		return bucket.remove(id).map(document -> null);
+		return bucket.async().remove(id).map(document -> null);
 	}
 }

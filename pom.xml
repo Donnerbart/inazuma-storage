@@ -60,8 +60,8 @@
             </dependency>
             <dependency>
                 <groupId>com.couchbase.client</groupId>
-                <artifactId>couchbase-client</artifactId>
-                <version>2.0.0-dp3</version>
+                <artifactId>java-client</artifactId>
+                <version>2.0.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>

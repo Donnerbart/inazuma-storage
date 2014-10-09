@@ -12,7 +12,7 @@ public class CouchbaseManager
 	static
 	{
 		cluster = CouchbaseCluster.create();
-		bucket = cluster.openBucket("default").toBlocking().single();
+		bucket = cluster.openBucket("default");
 	}
 
 	public static Bucket getBucket()

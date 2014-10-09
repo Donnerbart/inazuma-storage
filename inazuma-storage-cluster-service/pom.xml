@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>com.couchbase.client</groupId>
-            <artifactId>couchbase-client</artifactId>
+            <artifactId>java-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
