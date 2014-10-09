@@ -215,12 +215,12 @@ class MessageProcessor extends UntypedActor
 
 	private void processPersistDocumentMetadata(final BaseMessage message)
 	{
-		persistDocumentMetadataMessageInQueue = false;
-
 		storageController.getDatabaseWrapper().insertDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID),
 				GsonWrapper.toJson(documentMetadataMap)
 		).subscribe(response -> {
+			persistDocumentMetadataMessageInQueue = false;
+
 			storageController.incrementMetadataPersisted();
 		}, e -> {
 			log.debug("Could not store document metadata for user {}: {}", userID, e);
