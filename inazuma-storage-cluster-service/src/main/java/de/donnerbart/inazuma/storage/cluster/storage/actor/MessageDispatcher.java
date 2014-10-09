@@ -5,10 +5,10 @@ import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import akka.japi.pf.ReceiveBuilder;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
-import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.RemoveIdleMessageProcessorMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.WatchMeMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 

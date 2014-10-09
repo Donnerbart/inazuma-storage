@@ -6,8 +6,8 @@ import akka.actor.UntypedActor;
 import akka.dispatch.sysmsg.Terminate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ControlMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 
 class DeadLetterListener extends UntypedActor
 {
