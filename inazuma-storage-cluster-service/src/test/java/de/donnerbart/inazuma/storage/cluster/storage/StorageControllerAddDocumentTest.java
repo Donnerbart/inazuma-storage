@@ -1,6 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
-import com.couchbase.client.core.message.ResponseStatus;
+import com.couchbase.client.core.BackpressureException;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class StorageControllerAddDocumentTest
 {
 	private static final Observable<DatabaseResponse> DATABASE_RESPONSE_SUCCESS = Observable.just(new DatabaseGetResponse(null));
-	private static final Observable<DatabaseResponse> DATABASE_RESPONSE_FAILURE = Observable.error(new RuntimeException(ResponseStatus.FAILURE.toString()));
+	private static final Observable<DatabaseResponse> DATABASE_RESPONSE_FAILURE = Observable.error(new BackpressureException());
 
 	private final static String ANY_USER_1 = "1000000";
 	private final static String ANY_USER_2 = "2000000";
