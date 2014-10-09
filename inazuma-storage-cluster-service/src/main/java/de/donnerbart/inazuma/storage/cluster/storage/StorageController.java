@@ -56,7 +56,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public String getDocumentMetadata(final String userID)
 	{
-		final BaseCallbackMessage<String> message = new BaseCallbackMessage<>(MessageType.FETCH_DOCUMENT_METADATA, userID);
+		final FetchDocumentMetadataMessage message = new FetchDocumentMetadataMessage(userID);
 		messageDispatcher.tell(message, ActorRef.noSender());
 
 		return message.getCallback().getResult();
@@ -77,7 +77,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	{
 		queueSize.increment();
 
-		final BaseCallbackMessageWithKey<String> message = new BaseCallbackMessageWithKey<>(MessageType.FETCH_DOCUMENT, userID, key);
+		final FetchDocumentMessage message = new FetchDocumentMessage(userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
 
 		return message.getCallback().getResult();

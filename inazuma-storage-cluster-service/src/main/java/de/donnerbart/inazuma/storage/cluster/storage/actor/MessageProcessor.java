@@ -65,7 +65,7 @@ class MessageProcessor extends UntypedActor
 			{
 				case FETCH_DOCUMENT:
 				{
-					processFetchDocument((BaseMessageWithKey) baseMessage);
+					processFetchDocument((FetchDocumentMessage) baseMessage);
 					break;
 				}
 				case PERSIST_DOCUMENT:
@@ -85,7 +85,7 @@ class MessageProcessor extends UntypedActor
 				}
 				case FETCH_DOCUMENT_METADATA:
 				{
-					processFetchDocumentMetadata(baseMessage);
+					processFetchDocumentMetadata((FetchDocumentMetadataMessage) baseMessage);
 					break;
 				}
 				case PERSIST_DOCUMENT_METADATA:
@@ -161,14 +161,13 @@ class MessageProcessor extends UntypedActor
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void processFetchDocument(final BaseMessageWithKey message)
+	private void processFetchDocument(final FetchDocumentMessage message)
 	{
 		databaseWrapper.getDocument(
 				message.getKey()
 		).subscribe(response -> {
 			final String content = ((DatabaseGetResponse) response).getContent();
-			((BaseCallbackMessageWithKey<String>) message).setResult(content);
+			message.setResult(content);
 
 			storageController.incrementDocumentFetched();
 		}, e -> {
@@ -212,10 +211,9 @@ class MessageProcessor extends UntypedActor
 		sendPersistDocumentMetadataMessage();
 	}
 
-	@SuppressWarnings("unchecked")
-	private void processFetchDocumentMetadata(final BaseMessage message)
+	private void processFetchDocumentMetadata(final FetchDocumentMetadataMessage message)
 	{
-		((BaseCallbackMessage<String>) message).setResult(GsonWrapper.toJson(documentMetadataMap));
+		message.setResult(GsonWrapper.toJson(documentMetadataMap));
 	}
 
 	private void processPersistDocumentMetadata(final BaseMessage message)

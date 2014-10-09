@@ -76,7 +76,6 @@ public class StorageControllerAddDocumentTest
 	private StorageController storageController;
 
 	@BeforeMethod
-	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception
 	{
 		MockitoAnnotations.initMocks(this);
