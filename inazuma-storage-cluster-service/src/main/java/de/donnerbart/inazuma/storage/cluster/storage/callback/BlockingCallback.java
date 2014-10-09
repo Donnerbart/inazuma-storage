@@ -17,7 +17,10 @@ public class BlockingCallback<T>
 		lock.lock();
 		try
 		{
-			condition.await(10, TimeUnit.SECONDS);
+			if (result.get() == null)
+			{
+				condition.await(5, TimeUnit.MINUTES);
+			}
 		}
 		catch (InterruptedException ignored)
 		{

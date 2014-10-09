@@ -14,6 +14,13 @@ class DeadLetterListener extends UntypedActor
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
 	@Override
+	public void postStop() throws Exception
+	{
+		super.postStop();
+		System.out.println("The DeadLetterListener has stopped!");
+	}
+
+	@Override
 	public void onReceive(final Object message) throws Exception
 	{
 		if (message instanceof DeadLetter)

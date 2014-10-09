@@ -17,12 +17,15 @@ import java.util.Map;
 
 class MessageDispatcher extends UntypedActor
 {
-	private static final PartialFunction<Object, BoxedUnit> shutdownBehaviour = ReceiveBuilder.matchAny(null).build();
-
 	private final StorageController storageController;
 	private final ActorRef theReaper;
 
 	private final Map<String, ActorRef> messageProcessorByUserID = new HashMap<>();
+
+	private final PartialFunction<Object, BoxedUnit> shutdownBehaviour = ReceiveBuilder
+			.matchAny(
+					message -> System.err.println("Received message after shutdown: " + message)
+			).build();
 
 	public MessageDispatcher(final StorageController storageController, final ActorRef theReaper)
 	{
@@ -30,6 +33,13 @@ class MessageDispatcher extends UntypedActor
 		this.theReaper = theReaper;
 
 		theReaper.tell(WatchMeMessage.getInstance(), getSelf());
+	}
+
+	@Override
+	public void postStop() throws Exception
+	{
+		super.postStop();
+		System.out.println("The MessageDispatcher has stopped!");
 	}
 
 	@Override

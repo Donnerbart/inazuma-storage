@@ -50,6 +50,13 @@ class MessageProcessor extends UntypedActor
 	}
 
 	@Override
+	public void postStop() throws Exception
+	{
+		super.postStop();
+		//System.out.println("The MessageProcessor for " + userID + " is has stopped!");
+	}
+
+	@Override
 	public void onReceive(final Object message) throws Exception
 	{
 		if (message instanceof UserMessage)
