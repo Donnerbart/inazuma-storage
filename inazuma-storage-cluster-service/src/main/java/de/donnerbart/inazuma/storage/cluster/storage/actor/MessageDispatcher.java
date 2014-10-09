@@ -5,7 +5,7 @@ import akka.actor.PoisonPill;
 import akka.actor.UntypedActor;
 import akka.japi.pf.ReceiveBuilder;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
-import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.RemoveIdleMessageProcessorMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.WatchMeMessage;
@@ -35,10 +35,10 @@ class MessageDispatcher extends UntypedActor
 	@Override
 	public void onReceive(final Object message) throws Exception
 	{
-		if (message instanceof BaseMessage)
+		if (message instanceof UserMessage)
 		{
-			final BaseMessage baseMessage = (BaseMessage) message;
-			processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
+			final UserMessage userMessage = (UserMessage) message;
+			processBaseMessage(userMessage.getUserID()).tell(message, getSelf());
 		}
 		else if (message instanceof RemoveIdleMessageProcessorMessage)
 		{

@@ -1,13 +1,13 @@
-package de.donnerbart.inazuma.storage.cluster.storage.message;
+package de.donnerbart.inazuma.storage.cluster.storage.message.user;
 
-public class AddDocumentMessage extends BaseMessageWithKey
+public class AddDocumentMessage extends UserMessageWithKey
 {
 	private final String json;
 	private final long created;
 
 	public AddDocumentMessage(final String userID, final String key, final String json, final long created)
 	{
-		super(MessageType.PERSIST_DOCUMENT, userID, key);
+		super(userID, key);
 		this.json = json;
 		this.created = created;
 	}

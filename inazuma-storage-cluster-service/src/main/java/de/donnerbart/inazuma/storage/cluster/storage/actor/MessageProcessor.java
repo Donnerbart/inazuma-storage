@@ -5,7 +5,9 @@ import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
-import de.donnerbart.inazuma.storage.cluster.storage.message.*;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ControlMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.*;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.*;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadataUtil;
@@ -52,7 +54,7 @@ class MessageProcessor extends UntypedActor
 	@Override
 	public void onReceive(final Object message) throws Exception
 	{
-		if (message instanceof BaseMessage)
+		if (message instanceof UserMessage)
 		{
 			if (documentMetadataMap == null)
 			{
@@ -61,38 +63,29 @@ class MessageProcessor extends UntypedActor
 				return;
 			}
 
-			final BaseMessage baseMessage = (BaseMessage) message;
-			switch (baseMessage.getType())
+			if (message instanceof FetchDocumentMessage)
 			{
-				case FETCH_DOCUMENT:
-				{
-					processFetchDocument((FetchDocumentMessage) baseMessage);
-					break;
-				}
-				case PERSIST_DOCUMENT:
-				{
-					processPersistDocument((AddDocumentMessage) baseMessage);
-					break;
-				}
-				case DELETE_DOCUMENT:
-				{
-					processDeleteDocument((BaseMessageWithKey) baseMessage);
-					break;
-				}
-				case MARK_DOCUMENT_AS_READ:
-				{
-					processMarkDocumentAsRead((BaseMessageWithKey) baseMessage);
-					break;
-				}
-				case FETCH_DOCUMENT_METADATA:
-				{
-					processFetchDocumentMetadata((FetchDocumentMetadataMessage) baseMessage);
-					break;
-				}
-				default:
-				{
-					unhandled(baseMessage);
-				}
+				processFetchDocument((FetchDocumentMessage) message);
+			}
+			else if (message instanceof AddDocumentMessage)
+			{
+				processPersistDocument((AddDocumentMessage) message);
+			}
+			else if (message instanceof DeleteDocumentMessage)
+			{
+				processDeleteDocument((DeleteDocumentMessage) message);
+			}
+			else if (message instanceof MarkDocumentAsReadMessage)
+			{
+				processMarkDocumentAsRead((MarkDocumentAsReadMessage) message);
+			}
+			else if (message instanceof FetchDocumentMetadataMessage)
+			{
+				processFetchDocumentMetadata((FetchDocumentMetadataMessage) message);
+			}
+			else
+			{
+				unhandled(message);
 			}
 		}
 		else if (message instanceof LoadDocumentMetadataMessage)
@@ -178,7 +171,7 @@ class MessageProcessor extends UntypedActor
 		});
 	}
 
-	private void processDeleteDocument(final BaseMessageWithKey message)
+	private void processDeleteDocument(final DeleteDocumentMessage message)
 	{
 		databaseWrapper.deleteDocument(
 				message.getKey()
@@ -192,7 +185,7 @@ class MessageProcessor extends UntypedActor
 		});
 	}
 
-	private void processMarkDocumentAsRead(final BaseMessageWithKey baseMessage)
+	private void processMarkDocumentAsRead(final MarkDocumentAsReadMessage baseMessage)
 	{
 		documentMetadataMap.get(baseMessage.getKey()).setRead(true);
 

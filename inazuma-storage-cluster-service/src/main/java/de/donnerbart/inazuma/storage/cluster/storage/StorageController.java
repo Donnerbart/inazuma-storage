@@ -9,7 +9,7 @@ import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
-import de.donnerbart.inazuma.storage.cluster.storage.message.*;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.*;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ReportWatchCountMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
@@ -90,7 +90,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	{
 		queueSize.increment();
 
-		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.DELETE_DOCUMENT, userID, key);
+		final DeleteDocumentMessage message = new DeleteDocumentMessage(userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
 	}
 
@@ -99,7 +99,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	{
 		queueSize.increment();
 
-		final BaseMessageWithKey message = new BaseMessageWithKey(MessageType.MARK_DOCUMENT_AS_READ, userID, key);
+		final MarkDocumentAsReadMessage message = new MarkDocumentAsReadMessage(userID, key);
 		messageDispatcher.tell(message, ActorRef.noSender());
 	}
 

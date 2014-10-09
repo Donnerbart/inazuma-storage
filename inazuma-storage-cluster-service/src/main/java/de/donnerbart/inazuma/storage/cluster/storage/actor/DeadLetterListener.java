@@ -6,7 +6,7 @@ import akka.actor.UntypedActor;
 import akka.dispatch.sysmsg.Terminate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.user.UserMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ControlMessage;
 
 class DeadLetterListener extends UntypedActor
@@ -28,10 +28,10 @@ class DeadLetterListener extends UntypedActor
 
 					return;
 				}
-				else if (deadMessage instanceof BaseMessage)
+				else if (deadMessage instanceof UserMessage)
 				{
-					final BaseMessage baseMessage = (BaseMessage) deadMessage;
-					log.error("Received base message of type {} with content {} for actor {}", baseMessage.getType(), baseMessage.getUserID(), deadLetter.recipient());
+					final UserMessage userMessage = (UserMessage) deadMessage;
+					log.error("Received base message of type {} with content {} for actor {}", userMessage.getClass(), userMessage.getUserID(), deadLetter.recipient());
 
 					return;
 				}
