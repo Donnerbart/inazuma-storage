@@ -8,6 +8,7 @@ import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFa
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadataUtil;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
 import scala.concurrent.duration.Duration;
@@ -24,6 +25,8 @@ class MessageProcessor extends UntypedActor
 	private final StorageControllerInternalFacade storageController;
 	private final String userID;
 
+	private final DatabaseWrapper databaseWrapper;
+
 	private final LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
 	private Map<String, DocumentMetadata> documentMetadataMap = null;
@@ -33,6 +36,8 @@ class MessageProcessor extends UntypedActor
 	{
 		this.storageController = storageController;
 		this.userID = userID;
+
+		this.databaseWrapper = storageController.getDatabaseWrapper();
 
 		processLoadDocumentMetadataMessage(ControlMessage.create(ControlMessageType.LOAD_DOCUMENT_METADATA));
 	}
@@ -159,7 +164,7 @@ class MessageProcessor extends UntypedActor
 	@SuppressWarnings("unchecked")
 	private void processFetchDocument(final BaseMessageWithKey message)
 	{
-		storageController.getDatabaseWrapper().getDocument(
+		databaseWrapper.getDocument(
 				message.getKey()
 		).subscribe(response -> {
 			final String content = ((DatabaseGetResponse) response).getContent();
@@ -174,7 +179,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processPersistDocument(final AddDocumentMessage message)
 	{
-		storageController.getDatabaseWrapper().insertDocument(
+		databaseWrapper.insertDocument(
 				message.getKey(),
 				message.getJson()
 		).subscribe(response -> {
@@ -189,7 +194,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processDeleteDocument(final BaseMessageWithKey message)
 	{
-		storageController.getDatabaseWrapper().deleteDocument(
+		databaseWrapper.deleteDocument(
 				message.getKey()
 		).subscribe(response -> {
 			getSelf().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), getSelf());
@@ -215,7 +220,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processPersistDocumentMetadata(final BaseMessage message)
 	{
-		storageController.getDatabaseWrapper().insertDocument(
+		databaseWrapper.insertDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID),
 				GsonWrapper.toJson(documentMetadataMap)
 		).subscribe(response -> {
@@ -231,7 +236,7 @@ class MessageProcessor extends UntypedActor
 
 	private void processLoadDocumentMetadataMessage(final ControlMessage message)
 	{
-		storageController.getDatabaseWrapper().getDocument(
+		databaseWrapper.getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
 			getSelf().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, ((DatabaseGetResponse) response).getContent()), getSelf());
