@@ -1,6 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage.message;
 
-public class BaseMessage
+public abstract class BaseMessage
 {
 	private final MessageType type;
 	private final String userID;

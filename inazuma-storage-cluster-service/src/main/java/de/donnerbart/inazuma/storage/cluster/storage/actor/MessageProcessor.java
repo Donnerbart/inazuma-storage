@@ -89,11 +89,6 @@ class MessageProcessor extends UntypedActor
 					processFetchDocumentMetadata((FetchDocumentMetadataMessage) baseMessage);
 					break;
 				}
-				case PERSIST_DOCUMENT_METADATA:
-				{
-					processPersistDocumentMetadata(baseMessage);
-					break;
-				}
 				default:
 				{
 					unhandled(baseMessage);
@@ -107,6 +102,10 @@ class MessageProcessor extends UntypedActor
 		else if (message instanceof CreateMetadataDocumentMessage)
 		{
 			processCreateDocumentMetadataMessage((CreateMetadataDocumentMessage) message);
+		}
+		else if (message instanceof PersistDocumentMetadataMessage)
+		{
+			processPersistDocumentMetadata(message);
 		}
 		else if (message instanceof AddDocumentToMetadataMessage)
 		{
@@ -145,7 +144,7 @@ class MessageProcessor extends UntypedActor
 
 			storageController.incrementQueueSize();
 
-			getSelf().tell(new BaseMessage(MessageType.PERSIST_DOCUMENT_METADATA, userID), getSelf());
+			getSelf().tell(PersistDocumentMetadataMessage.getInstance(), getSelf());
 		}
 	}
 
@@ -205,8 +204,16 @@ class MessageProcessor extends UntypedActor
 		message.setResult(GsonWrapper.toJson(documentMetadataMap));
 	}
 
-	private void processPersistDocumentMetadata(final BaseMessage message)
+	private void processPersistDocumentMetadata(final Object message)
 	{
+		if (documentMetadataMap == null)
+		{
+			log.error("Could not persist empty document metadata for user {}", userID);
+
+			sendDelayedMessage(message);
+			return;
+		}
+
 		databaseWrapper.insertDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID),
 				GsonWrapper.toJson(documentMetadataMap)
