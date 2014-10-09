@@ -7,7 +7,7 @@ import akka.dispatch.sysmsg.Terminate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
-import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ControlMessage;
 
 class DeadLetterListener extends UntypedActor
 {
@@ -24,11 +24,9 @@ class DeadLetterListener extends UntypedActor
 			{
 				if (deadMessage instanceof ControlMessage)
 				{
-					final ControlMessage controlMessage = (ControlMessage) deadMessage;
-					log.error("Received control message of type {} with content {} for actor {}", controlMessage.getType(), controlMessage.getContent(), deadLetter.recipient());
+					log.error("Received control message of type {} with content {}", deadMessage.getClass(), deadLetter.recipient());
 
 					return;
-
 				}
 				else if (deadMessage instanceof BaseMessage)
 				{

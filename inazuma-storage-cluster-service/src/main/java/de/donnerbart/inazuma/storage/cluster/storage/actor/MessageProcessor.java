@@ -6,6 +6,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.*;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
@@ -39,7 +40,7 @@ class MessageProcessor extends UntypedActor
 
 		this.databaseWrapper = storageController.getDatabaseWrapper();
 
-		processLoadDocumentMetadataMessage(ControlMessage.create(ControlMessageType.LOAD_DOCUMENT_METADATA));
+		processLoadDocumentMetadataMessage(LoadDocumentMetadataMessage.getInstance());
 	}
 
 	@Override
@@ -99,34 +100,21 @@ class MessageProcessor extends UntypedActor
 				}
 			}
 		}
-		else if (message instanceof ControlMessage)
+		else if (message instanceof LoadDocumentMetadataMessage)
 		{
-			final ControlMessage controlMessage = (ControlMessage) message;
-			switch (controlMessage.getType())
-			{
-				case LOAD_DOCUMENT_METADATA:
-				{
-					processLoadDocumentMetadataMessage(controlMessage);
-					break;
-				}
-				case CREATE_METADATA_DOCUMENT:
-				{
-					processCreateDocumentMetadataMessage(controlMessage);
-					break;
-				}
-				case ADD_DOCUMENT_TO_METADATA:
-				{
-					processAddDocumentToMetadata((AddDocumentToMetadataControlMessage) controlMessage);
-					break;
-				}
-				case REMOVE_DOCUMENT_FROM_METADATA:
-					processRemoveDocumentFromMetadata(controlMessage);
-					break;
-				default:
-				{
-					unhandled(controlMessage);
-				}
-			}
+			processLoadDocumentMetadataMessage(message);
+		}
+		else if (message instanceof CreateMetadataDocumentMessage)
+		{
+			processCreateDocumentMetadataMessage((CreateMetadataDocumentMessage) message);
+		}
+		else if (message instanceof AddDocumentToMetadataMessage)
+		{
+			processAddDocumentToMetadata((AddDocumentToMetadataMessage) message);
+		}
+		else if (message instanceof RemoveDocumentFromMetadataMessage)
+		{
+			processRemoveDocumentFromMetadata((RemoveDocumentFromMetadataMessage) message);
 		}
 		else if (message instanceof ReceiveTimeout)
 		{
@@ -182,8 +170,8 @@ class MessageProcessor extends UntypedActor
 				message.getKey(),
 				message.getJson()
 		).subscribe(response -> {
-			final DocumentMetadata documentMetadata = new DocumentMetadata(message);
-			getSelf().tell(new AddDocumentToMetadataControlMessage(message.getKey(), documentMetadata), getSelf());
+			final ControlMessage controlMessage = new AddDocumentToMetadataMessage(message.getKey(), new DocumentMetadata(message));
+			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
 			log.debug("Could not persist document for user {}: {}", userID, e);
 			sendDelayedMessage(message);
@@ -196,7 +184,8 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.deleteDocument(
 				message.getKey()
 		).subscribe(response -> {
-			getSelf().tell(ControlMessage.create(ControlMessageType.REMOVE_DOCUMENT_FROM_METADATA, message.getKey()), getSelf());
+			final ControlMessage controlMessage = new RemoveDocumentFromMetadataMessage(message.getKey());
+			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
 			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e);
 			sendDelayedMessage(message);
@@ -232,21 +221,22 @@ class MessageProcessor extends UntypedActor
 		});
 	}
 
-	private void processLoadDocumentMetadataMessage(final ControlMessage message)
+	private void processLoadDocumentMetadataMessage(final Object message)
 	{
 		databaseWrapper.getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
-			getSelf().tell(ControlMessage.create(ControlMessageType.CREATE_METADATA_DOCUMENT, ((DatabaseGetResponse) response).getContent()), getSelf());
+			final ControlMessage controlMessage = new CreateMetadataDocumentMessage(((DatabaseGetResponse) response).getContent());
+			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
 			log.debug("Could not load document metadata for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 		});
 	}
 
-	private void processCreateDocumentMetadataMessage(final ControlMessage message)
+	private void processCreateDocumentMetadataMessage(final CreateMetadataDocumentMessage message)
 	{
-		final String json = message.getContent();
+		final String json = message.getJson();
 		if (json == null)
 		{
 			documentMetadataMap = new HashMap<>();
@@ -258,13 +248,13 @@ class MessageProcessor extends UntypedActor
 		if (documentMetadataMap == null)
 		{
 			log.debug("Could not create document metadata for user {}: {}", userID, json);
-			sendDelayedMessage(ControlMessage.create(ControlMessageType.LOAD_DOCUMENT_METADATA));
+			sendDelayedMessage(LoadDocumentMetadataMessage.getInstance());
 		}
 	}
 
-	private void processAddDocumentToMetadata(final AddDocumentToMetadataControlMessage message)
+	private void processAddDocumentToMetadata(final AddDocumentToMetadataMessage message)
 	{
-		documentMetadataMap.put(message.getContent(), message.getMetadata());
+		documentMetadataMap.put(message.getId(), message.getMetadata());
 
 		sendPersistDocumentMetadataMessage();
 
@@ -273,9 +263,9 @@ class MessageProcessor extends UntypedActor
 		storageController.incrementDocumentPersisted();
 	}
 
-	private void processRemoveDocumentFromMetadata(final ControlMessage message)
+	private void processRemoveDocumentFromMetadata(final RemoveDocumentFromMetadataMessage message)
 	{
-		documentMetadataMap.remove(message.getContent());
+		documentMetadataMap.remove(message.getId());
 
 		sendPersistDocumentMetadataMessage();
 
@@ -287,6 +277,6 @@ class MessageProcessor extends UntypedActor
 		documentMetadataMap.clear();
 		documentMetadataMap = null;
 
-		getContext().parent().tell(ControlMessage.create(ControlMessageType.REMOVE_IDLE_MESSAGE_PROCESSOR, userID), getSelf());
+		getContext().parent().tell(new RemoveIdleMessageProcessorMessage(userID), getSelf());
 	}
 }

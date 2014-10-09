@@ -6,8 +6,9 @@ import akka.actor.UntypedActor;
 import akka.japi.pf.ReceiveBuilder;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageController;
 import de.donnerbart.inazuma.storage.cluster.storage.message.BaseMessage;
-import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
-import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessageType;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.RemoveIdleMessageProcessorMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.WatchMeMessage;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
 
@@ -28,7 +29,7 @@ class MessageDispatcher extends UntypedActor
 		this.storageController = storageController;
 		this.theReaper = theReaper;
 
-		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), getSelf());
+		theReaper.tell(WatchMeMessage.getInstance(), getSelf());
 	}
 
 	@Override
@@ -39,27 +40,14 @@ class MessageDispatcher extends UntypedActor
 			final BaseMessage baseMessage = (BaseMessage) message;
 			processBaseMessage(baseMessage.getUserID()).tell(message, getSelf());
 		}
-		else if (message instanceof ControlMessage)
+		else if (message instanceof RemoveIdleMessageProcessorMessage)
 		{
-			final ControlMessage controlMessage = (ControlMessage) message;
-			switch (controlMessage.getType())
-			{
-				case REMOVE_IDLE_MESSAGE_PROCESSOR:
-				{
-					messageProcessorByUserID.remove(controlMessage.getContent());
-					sender().tell(PoisonPill.getInstance(), getSelf());
-					break;
-				}
-				case SHUTDOWN:
-				{
-					processShutdown();
-					break;
-				}
-				default:
-				{
-					unhandled(controlMessage);
-				}
-			}
+			messageProcessorByUserID.remove(((RemoveIdleMessageProcessorMessage) message).getUserID());
+			sender().tell(PoisonPill.getInstance(), getSelf());
+		}
+		else if (message instanceof ShutdownMessage)
+		{
+			processShutdown();
 		}
 		else
 		{
@@ -76,7 +64,7 @@ class MessageDispatcher extends UntypedActor
 		}
 
 		final ActorRef messageProcessor = ActorFactory.createMessageProcessor(getContext(), storageController, userID);
-		theReaper.tell(ControlMessage.create(ControlMessageType.WATCH_ME), messageProcessor);
+		theReaper.tell(WatchMeMessage.getInstance(), messageProcessor);
 
 		final ActorRef previousActor = messageProcessorByUserID.putIfAbsent(userID, messageProcessor);
 		if (previousActor != null)

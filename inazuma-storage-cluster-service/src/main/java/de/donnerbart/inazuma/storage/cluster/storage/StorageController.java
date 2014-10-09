@@ -10,6 +10,8 @@ import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.*;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ReportWatchCountMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMessage;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -112,13 +114,13 @@ public class StorageController implements StorageControllerFacade, StorageContro
 			callbackEmptyQueue.getResult();
 		}
 
-		messageDispatcher.tell(ControlMessage.create(ControlMessageType.SHUTDOWN), ActorRef.noSender());
+		messageDispatcher.tell(ShutdownMessage.getInstance(), ActorRef.noSender());
 	}
 
 	@Override
 	public void awaitShutdown()
 	{
-		theReaper.tell(ControlMessage.create(ControlMessageType.REPORT_WATCH_COUNT), ActorRef.noSender());
+		theReaper.tell(ReportWatchCountMessage.getInstance(), ActorRef.noSender());
 		final int actorCount = callbackReportWatchedActorCount.getResult();
 
 		if (actorCount > 0)

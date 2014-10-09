@@ -3,7 +3,8 @@ package de.donnerbart.inazuma.storage.cluster.storage.actor;
 import akka.actor.Terminated;
 import akka.actor.UntypedActor;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
-import de.donnerbart.inazuma.storage.cluster.storage.message.ControlMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.ReportWatchCountMessage;
+import de.donnerbart.inazuma.storage.cluster.storage.message.control.WatchMeMessage;
 
 class TheReaper extends UntypedActor
 {
@@ -29,27 +30,14 @@ class TheReaper extends UntypedActor
 				allSoulsReaped();
 			}
 		}
-		else if (message instanceof ControlMessage)
+		else if (message instanceof WatchMeMessage)
 		{
-			final ControlMessage controlMessage = (ControlMessage) message;
-			switch (controlMessage.getType())
-			{
-				case WATCH_ME:
-				{
-					++watchCounter;
-					getContext().watch(sender());
-					break;
-				}
-				case REPORT_WATCH_COUNT:
-				{
-					callbackReportWatchedActorCount.setResult(watchCounter);
-					break;
-				}
-				default:
-				{
-					unhandled(controlMessage);
-				}
-			}
+			++watchCounter;
+			getContext().watch(sender());
+		}
+		else if (message instanceof ReportWatchCountMessage)
+		{
+			callbackReportWatchedActorCount.setResult(watchCounter);
 		}
 		else
 		{
