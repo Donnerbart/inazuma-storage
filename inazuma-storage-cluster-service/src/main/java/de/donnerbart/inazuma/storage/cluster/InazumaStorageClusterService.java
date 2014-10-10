@@ -46,6 +46,20 @@ public class InazumaStorageClusterService
 		return latch;
 	}
 
+	public static void stopBlocking()
+	{
+		stop();
+
+		try
+		{
+			latch.await();
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	public static void stop()
 	{
 		System.out.println("Received stop signal!");
