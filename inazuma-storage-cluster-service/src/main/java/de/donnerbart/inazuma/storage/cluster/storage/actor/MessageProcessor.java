@@ -11,7 +11,6 @@ import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadataUtil;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
 import scala.concurrent.duration.Duration;
 
 import java.util.HashMap;
@@ -64,7 +63,6 @@ class MessageProcessor extends UntypedActor
 			if (documentMetadataMap == null)
 			{
 				sendDelayedMessage(message);
-
 				return;
 			}
 
@@ -151,12 +149,11 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.getDocument(
 				message.getKey()
 		).subscribe(response -> {
-			final String content = ((DatabaseGetResponse) response).getContent();
-			message.setResult(content);
+			message.setResult(response.getContent());
 
 			storageController.incrementDocumentFetched();
 		}, e -> {
-			log.debug("Could not load document for user {}: {}", userID, e);
+			log.warning("Could not load document for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 		});
 	}
@@ -170,7 +167,7 @@ class MessageProcessor extends UntypedActor
 			final ControlMessage controlMessage = new AddDocumentToMetadataMessage(message.getKey(), new DocumentMetadata(message));
 			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
-			log.debug("Could not persist document for user {}: {}", userID, e);
+			log.warning("Could not persist document for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 			storageController.incrementDocumentRetries();
 		});
@@ -184,7 +181,7 @@ class MessageProcessor extends UntypedActor
 			final ControlMessage controlMessage = new RemoveDocumentFromMetadataMessage(message.getKey());
 			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
-			log.debug("Could not delete document {} for user {}: {}", message.getKey(), userID, e);
+			log.warning("Could not delete document {} for user {}: {}", message.getKey(), userID, e);
 			sendDelayedMessage(message);
 			storageController.incrementDocumentRetries();
 		});
@@ -206,7 +203,7 @@ class MessageProcessor extends UntypedActor
 	{
 		if (documentMetadataMap == null)
 		{
-			log.error("Could not persist empty document metadata for user {}", userID);
+			log.warning("Could not persist empty document metadata for user {}", userID);
 
 			sendDelayedMessage(message);
 			return;
@@ -220,7 +217,7 @@ class MessageProcessor extends UntypedActor
 
 			storageController.incrementMetadataPersisted();
 		}, e -> {
-			log.debug("Could not store document metadata for user {}: {}", userID, e);
+			log.warning("Could not store document metadata for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 			storageController.incrementMetadataRetries();
 		});
@@ -231,10 +228,10 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
-			final ControlMessage controlMessage = new CreateMetadataDocumentMessage(((DatabaseGetResponse) response).getContent());
+			final ControlMessage controlMessage = new CreateMetadataDocumentMessage(response.getContent());
 			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
-			log.debug("Could not load document metadata for user {}: {}", userID, e);
+			log.warning("Could not load document metadata for user {}: {}", userID, e);
 			sendDelayedMessage(message);
 		});
 	}
@@ -252,7 +249,7 @@ class MessageProcessor extends UntypedActor
 		documentMetadataMap = GsonWrapper.getDocumentMetadataMap(json);
 		if (documentMetadataMap == null)
 		{
-			log.debug("Could not create document metadata for user {}: {}", userID, json);
+			log.warning("Could not create document metadata for user {}: {}", userID, json);
 			sendDelayedMessage(LoadDocumentMetadataMessage.getInstance());
 		}
 	}
