@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="Integration tests" parallel="false">
+    <test name="InazumaStorageClusterService">
+        <classes>
+            <class name="de.donnerbart.inazuma.storage.cluster.InazumaStorageClusterServiceTest"/>
+        </classes>
+    </test>
+</suite>
