@@ -6,7 +6,7 @@ public class Main
 {
 	public static void main(final String[] args)
 	{
-		final CountDownLatch latch = InazumaStorageClusterService.start();
+		final CountDownLatch latch = InazumaStorageClusterService.start("default");
 
 		// Wait for shutdown hook
 		System.out.println("Inazuma-Storage is running...");

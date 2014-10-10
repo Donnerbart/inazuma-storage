@@ -7,17 +7,15 @@ import com.couchbase.client.java.CouchbaseCluster;
 public class CouchbaseManager
 {
 	private static final Cluster cluster;
-	private static final AsyncBucket bucket;
 
 	static
 	{
 		cluster = CouchbaseCluster.create();
-		bucket = cluster.openBucket("default").async();
 	}
 
-	public static AsyncBucket getAsyncBucket()
+	public static AsyncBucket getAsyncBucket(final String name)
 	{
-		return bucket;
+		return cluster.openBucket(name).async();
 	}
 
 	public static void shutdown()

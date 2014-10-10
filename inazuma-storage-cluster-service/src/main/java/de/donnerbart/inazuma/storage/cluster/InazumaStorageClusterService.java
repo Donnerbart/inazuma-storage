@@ -1,5 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster;
 
+import com.couchbase.client.java.AsyncBucket;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
@@ -20,13 +21,14 @@ public class InazumaStorageClusterService
 	private static final CountDownLatch latch = new CountDownLatch(1);
 	private static final AtomicReference<StorageControllerFacade> storageControllerReference = new AtomicReference<>(null);
 
-	public static CountDownLatch start()
+	public static CountDownLatch start(final String bucketName)
 	{
 		// Get Hazelcast instance
 		final HazelcastInstance hz = HazelcastManager.getInstance();
 
 		// Get Couchbase instance
-		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(CouchbaseManager.getAsyncBucket());
+		final AsyncBucket bucket = CouchbaseManager.getAsyncBucket(bucketName);
+		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(bucket);
 
 		// Start JMX agent
 		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");
@@ -44,6 +46,13 @@ public class InazumaStorageClusterService
 		return latch;
 	}
 
+	public static void stop()
+	{
+		System.out.println("Received stop signal!");
+
+		shutdown();
+	}
+
 	private static class HazelcastShutdownHook implements Runnable
 	{
 		@Override
@@ -51,39 +60,49 @@ public class InazumaStorageClusterService
 		{
 			System.out.println("Received shutdown signal!");
 
-			// Shutdown RequestController
-			System.out.println("Shutting down RequestController...");
-			RequestController.getInstance().shutdown();
-			System.out.println("Done!\n");
-
-			// Shutdown StorageController
-			System.out.println("Shutting down StorageController...");
-			final StorageControllerFacade storageController = storageControllerReference.get();
-			if (storageController != null)
-			{
-				storageController.shutdown();
-				storageController.awaitShutdown();
-				storageControllerReference.set(null);
-			}
-			System.out.println("Done!\n");
-
-			// Shutdown of Couchbase instance
-			System.out.println("Shutting down Couchbase instance...");
-			CouchbaseManager.shutdown();
-			System.out.println("Done!\n");
-
-			// Shutdown of Hazelcast instance
-			System.out.println("Shutting down Hazelcast instance...");
-			Hazelcast.shutdownAll();
-			System.out.println("Done!\n");
-
-			// Shutdown of StatisticManager
-			System.out.println("Shutting down StatisticManager...");
-			StatisticManager.getInstance().shutdown();
-			System.out.println("Done!\n");
-
-			// Release main thread
-			latch.countDown();
+			shutdown();
 		}
+	}
+
+	private static void shutdown()
+	{
+		if (latch.getCount() == 0)
+		{
+			return;
+		}
+
+		// Shutdown RequestController
+		System.out.println("Shutting down RequestController...");
+		RequestController.getInstance().shutdown();
+		System.out.println("Done!\n");
+
+		// Shutdown StorageController
+		System.out.println("Shutting down StorageController...");
+		final StorageControllerFacade storageController = storageControllerReference.get();
+		if (storageController != null)
+		{
+			storageController.shutdown();
+			storageController.awaitShutdown();
+			storageControllerReference.set(null);
+		}
+		System.out.println("Done!\n");
+
+		// Shutdown of Couchbase instance
+		System.out.println("Shutting down Couchbase instance...");
+		CouchbaseManager.shutdown();
+		System.out.println("Done!\n");
+
+		// Shutdown of Hazelcast instance
+		System.out.println("Shutting down Hazelcast instance...");
+		Hazelcast.shutdownAll();
+		System.out.println("Done!\n");
+
+		// Shutdown of StatisticManager
+		System.out.println("Shutting down StatisticManager...");
+		StatisticManager.getInstance().shutdown();
+		System.out.println("Done!\n");
+
+		// Release main thread
+		latch.countDown();
 	}
 }
