@@ -60,7 +60,7 @@ public class RequestController
 
 		final GetDocumentTask task = new GetDocumentTask(userID, key);
 
-		return getResultFromCallable(task, key);
+		return getResultFromCallable(task, userID);
 	}
 
 	public void deleteDocument(final String userID, final String key)
@@ -83,9 +83,9 @@ public class RequestController
 		STORAGE_CONTROLLER_INSTANCE.set(null);
 	}
 
-	private String getResultFromCallable(final Callable<String> task, final String key)
+	private <T> T getResultFromCallable(final Callable<T> task, final String key)
 	{
-		final Future<String> future = es.submitToKeyOwner(task, key);
+		final Future<T> future = es.submitToKeyOwner(task, key);
 
 		try
 		{
