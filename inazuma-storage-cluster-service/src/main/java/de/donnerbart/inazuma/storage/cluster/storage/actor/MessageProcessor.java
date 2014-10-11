@@ -49,12 +49,14 @@ class MessageProcessor extends UntypedActor
 		getContext().setReceiveTimeout(Duration.create(5, TimeUnit.MINUTES));
 	}
 
+/*
 	@Override
 	public void postStop() throws Exception
 	{
 		super.postStop();
-		//System.out.println("The MessageProcessor for " + userID + " is has stopped!");
+		System.out.println("    The MessageProcessor for " + userID + " is has stopped!");
 	}
+*/
 
 	@Override
 	public void onReceive(final Object message) throws Exception

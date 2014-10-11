@@ -113,26 +113,26 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void shutdown()
 	{
-		System.out.println("\nWaiting for queue to get empty...");
+		System.out.println("  Waiting for queue to get empty...");
 		watchdog(() -> {
 			final long queue = queueSize.sum();
 			if (queue > 0)
 			{
-				System.out.println("Actual queue size: " + queue);
+				System.out.println("  Actual queue size: " + queue);
 				return false;
 			}
 			return true;
 		}, 0, 1000);
-		System.out.println("Done!");
+		System.out.println("  Done!");
 
 		theReaper.tell(ReportWatchCountMessage.getInstance(), ActorRef.noSender());
 		messageDispatcher.tell(ShutdownMessage.getInstance(), ActorRef.noSender());
 
 		// Subtract the MessageDispatcher from reported actor count to print the actual number of MessageProcessor actors
-		System.out.println("\nWaiting for 3 management actors and " + (callbackReportWatchedActorCount.getResult() - 1) + " message processors to finish...");
+		System.out.println("  Waiting for 3 management actors and " + (callbackReportWatchedActorCount.getResult() - 1) + " message processors to finish...");
 		callbackAllSoulsReaped.getResult();
 		actorSystem.awaitTermination();
-		System.out.println("Done!");
+		System.out.println("  Done!");
 	}
 
 	@Override

@@ -17,7 +17,7 @@ class DeadLetterListener extends UntypedActor
 	public void postStop() throws Exception
 	{
 		super.postStop();
-		System.out.println("The DeadLetterListener has stopped!");
+		System.out.println("    The DeadLetterListener has stopped!");
 	}
 
 	@Override

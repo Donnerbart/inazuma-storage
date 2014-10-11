@@ -25,7 +25,7 @@ class TheReaper extends UntypedActor
 	public void postStop() throws Exception
 	{
 		super.postStop();
-		System.out.println("TheReaper has stopped!");
+		System.out.println("    TheReaper has stopped!");
 	}
 
 	@Override

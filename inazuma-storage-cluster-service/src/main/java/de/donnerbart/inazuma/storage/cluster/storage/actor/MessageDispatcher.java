@@ -39,7 +39,7 @@ class MessageDispatcher extends UntypedActor
 	public void postStop() throws Exception
 	{
 		super.postStop();
-		System.out.println("The MessageDispatcher has stopped!");
+		System.out.println("    The MessageDispatcher has stopped!");
 	}
 
 	@Override

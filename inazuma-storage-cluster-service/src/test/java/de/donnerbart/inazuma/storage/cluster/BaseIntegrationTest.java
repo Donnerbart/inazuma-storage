@@ -35,7 +35,7 @@ public abstract class BaseIntegrationTest
 		{
 			System.out.println("Creating test bucket...");
 			CouchbaseManager.createBucket(CB_USERNAME, CB_PASSWORD, BUCKET_NAME, 256, true);
-			System.out.println("Done!");
+			System.out.println("Done!\n");
 		}
 
 		InazumaStorageClusterService.start(BUCKET_NAME);
@@ -49,7 +49,7 @@ public abstract class BaseIntegrationTest
 		{
 			System.out.println("Removing test bucket...");
 			CouchbaseManager.removeBucket(CB_USERNAME, CB_PASSWORD, BUCKET_NAME);
-			System.out.println("Done!");
+			System.out.println("Done!\n");
 		}
 
 		InazumaStorageClusterService.stopBlocking();
