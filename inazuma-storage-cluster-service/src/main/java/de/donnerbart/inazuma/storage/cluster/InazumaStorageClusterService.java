@@ -41,7 +41,7 @@ public class InazumaStorageClusterService
 		new RequestController(hz, storageController);
 
 		// Create shutdown event
-		Runtime.getRuntime().addShutdownHook(new Thread(new HazelcastShutdownHook()));
+		Runtime.getRuntime().addShutdownHook(new Thread(InazumaStorageClusterService::stop));
 
 		return latch;
 	}
@@ -62,28 +62,12 @@ public class InazumaStorageClusterService
 
 	public static void stop()
 	{
-		System.out.println("Received stop signal!");
-
-		shutdown();
-	}
-
-	private static class HazelcastShutdownHook implements Runnable
-	{
-		@Override
-		public void run()
-		{
-			System.out.println("Received shutdown signal!");
-
-			shutdown();
-		}
-	}
-
-	private static void shutdown()
-	{
 		if (latch.getCount() == 0)
 		{
 			return;
 		}
+
+		System.out.println("Shutdown of Inazuma-Storage requested...\n");
 
 		// Shutdown RequestController
 		System.out.println("Shutting down RequestController...");

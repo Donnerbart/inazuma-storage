@@ -25,7 +25,7 @@ public class InazumaStorageClient
 		new RequestController(hz, null);
 
 		// Create shutdown event
-		Runtime.getRuntime().addShutdownHook(new Thread(new HazelcastShutdownHook()));
+		Runtime.getRuntime().addShutdownHook(new Thread(InazumaStorageClient::stop));
 
 		return latch;
 	}
@@ -62,14 +62,5 @@ public class InazumaStorageClient
 
 		// Release main thread
 		latch.countDown();
-	}
-
-	private static class HazelcastShutdownHook implements Runnable
-	{
-		@Override
-		public void run()
-		{
-			stop();
-		}
 	}
 }
