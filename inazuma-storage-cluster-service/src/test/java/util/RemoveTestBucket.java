@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.cluster;
+package util;
 
 import de.donnerbart.inazuma.storage.cluster.storage.manager.CouchbaseManager;
 

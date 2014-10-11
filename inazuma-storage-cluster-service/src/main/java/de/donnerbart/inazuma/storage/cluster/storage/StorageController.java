@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
+import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
@@ -64,14 +65,21 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		return message.getCallback().getResult();
 	}
 
+	public boolean addDocument(final String userID, final String key, final String json, final long created)
+	{
+		return addDocument(userID, key, json, created, PersistenceLevel.DEFAULT_LEVEL);
+	}
+
 	@Override
-	public void addDocumentAsync(final String userID, final String key, final String json, final long created)
+	public boolean addDocument(final String userID, final String key, final String json, final long created, final PersistenceLevel persistenceLevel)
 	{
 		queueSize.increment();
 		documentAdded.increment();
 
-		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created);
+		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created, persistenceLevel);
 		messageDispatcher.tell(message, ActorRef.noSender());
+
+		return (persistenceLevel == PersistenceLevel.ARRIVED_AT_NODE) ? true : message.getCallback().getResult();
 	}
 
 	@Override

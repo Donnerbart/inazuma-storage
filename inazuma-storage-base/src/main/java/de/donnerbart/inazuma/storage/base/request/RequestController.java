@@ -46,12 +46,18 @@ public class RequestController
 		return getResultFromCallable(task, userID);
 	}
 
-	public void addDocument(final String userID, final String key, final String json, final long created)
+	public boolean addDocument(final String userID, final String key, final String json, final long created)
+	{
+		return addDocument(userID, key, json, created, PersistenceLevel.DEFAULT_LEVEL);
+	}
+
+	public boolean addDocument(final String userID, final String key, final String json, final long created, final PersistenceLevel persistenceLevel)
 	{
 		documentAddRequest.increment();
 
-		final AddDocumentTask task = new AddDocumentTask(userID, key, json, created);
-		es.submitToKeyOwner(task, userID);
+		final AddDocumentTask task = new AddDocumentTask(userID, key, json, created, persistenceLevel);
+
+		return getResultFromCallable(task, userID);
 	}
 
 	public String getDocument(final String userID, final String key)

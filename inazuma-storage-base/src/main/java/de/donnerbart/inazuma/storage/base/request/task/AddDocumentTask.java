@@ -1,5 +1,6 @@
 package de.donnerbart.inazuma.storage.base.request.task;
 
+import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 
 import java.util.concurrent.Callable;
@@ -10,13 +11,15 @@ public class AddDocumentTask implements Callable<Boolean>
 	private final String key;
 	private final String json;
 	private final long created;
+	private final PersistenceLevel persistenceLevel;
 
-	public AddDocumentTask(final String userID, final String key, final String json, final long created)
+	public AddDocumentTask(final String userID, final String key, final String json, final long created, final PersistenceLevel persistenceLevel)
 	{
 		this.userID = userID;
 		this.key = key;
 		this.json = json;
 		this.created = created;
+		this.persistenceLevel = persistenceLevel;
 	}
 
 	@Override
@@ -24,9 +27,7 @@ public class AddDocumentTask implements Callable<Boolean>
 	{
 		//System.out.println("Add document for user " + userID + " with key " + key);
 
-		RequestController.getStorageControllerInstance().addDocumentAsync(userID, key, json, created);
-
-		return true;
+		return RequestController.getStorageControllerInstance().addDocument(userID, key, json, created, persistenceLevel);
 	}
 
 	public String getUserID()
@@ -47,5 +48,10 @@ public class AddDocumentTask implements Callable<Boolean>
 	public long getCreated()
 	{
 		return created;
+	}
+
+	public PersistenceLevel getPersistenceLevel()
+	{
+		return persistenceLevel;
 	}
 }
