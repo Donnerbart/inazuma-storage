@@ -100,7 +100,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -117,7 +116,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_2_KEY, DOCUMENT_2_JSON);
@@ -135,7 +133,6 @@ public class StorageControllerAddDocumentTest
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper, times(2)).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -153,7 +150,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper, times(2)).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -170,7 +166,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -187,7 +182,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -207,7 +201,6 @@ public class StorageControllerAddDocumentTest
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
@@ -230,7 +223,6 @@ public class StorageControllerAddDocumentTest
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_2);
@@ -250,7 +242,6 @@ public class StorageControllerAddDocumentTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.shutdown();
-		storageController.awaitShutdown();
 
 		verify(databaseWrapper, times(2)).getDocument(DOCUMENT_METADATA_KEY_USER_1);
 		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);

@@ -96,7 +96,6 @@ public class InazumaStorageClusterService
 		if (storageController != null)
 		{
 			storageController.shutdown();
-			storageController.awaitShutdown();
 			storageControllerReference.set(null);
 		}
 		System.out.println("Done!\n");

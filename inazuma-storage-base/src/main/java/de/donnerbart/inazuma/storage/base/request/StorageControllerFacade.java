@@ -13,6 +13,4 @@ public interface StorageControllerFacade
 	public void markDocumentAsReadAsync(String userID, String key);
 
 	public void shutdown();
-
-	public void awaitShutdown();
 }

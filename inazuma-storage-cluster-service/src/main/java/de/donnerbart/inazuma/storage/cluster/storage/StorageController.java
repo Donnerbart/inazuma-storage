@@ -15,8 +15,9 @@ import de.donnerbart.inazuma.storage.cluster.storage.message.control.ShutdownMes
 import de.donnerbart.inazuma.storage.cluster.storage.message.user.*;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
+
+import static de.donnerbart.inazuma.storage.base.util.Watchdog.watchdog;
 
 public class StorageController implements StorageControllerFacade, StorageControllerInternalFacade
 {
@@ -27,8 +28,6 @@ public class StorageController implements StorageControllerFacade, StorageContro
 
 	private final LongAdder queueSize = new LongAdder();
 
-	private final AtomicBoolean notifyEmptyQueue = new AtomicBoolean(false);
-	private final BlockingCallback<Object> callbackEmptyQueue = new BlockingCallback<>();
 	private final BlockingCallback<Object> callbackAllSoulsReaped = new BlockingCallback<>();
 	private final BlockingCallback<Integer> callbackReportWatchedActorCount = new BlockingCallback<>();
 
@@ -114,30 +113,26 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	@Override
 	public void shutdown()
 	{
-		final long queue = queueSize.sum();
-		if (queue > 0)
-		{
-			System.out.println("Waiting for queue to get empty (" + queue + ")...");
-			notifyEmptyQueue.set(true);
-			callbackEmptyQueue.getResult();
-		}
+		System.out.println("\nWaiting for queue to get empty...");
+		watchdog(() -> {
+			final long queue = queueSize.sum();
+			if (queue > 0)
+			{
+				System.out.println("Actual queue size: " + queue);
+				return false;
+			}
+			return true;
+		}, 0, 1000);
+		System.out.println("Done!");
 
-		messageDispatcher.tell(ShutdownMessage.getInstance(), ActorRef.noSender());
-	}
-
-	@Override
-	public void awaitShutdown()
-	{
 		theReaper.tell(ReportWatchCountMessage.getInstance(), ActorRef.noSender());
-		final int actorCount = callbackReportWatchedActorCount.getResult();
+		messageDispatcher.tell(ShutdownMessage.getInstance(), ActorRef.noSender());
 
-		if (actorCount > 0)
-		{
-			System.out.println("Waiting for actors to finish (" + actorCount + ")...");
-			callbackAllSoulsReaped.getResult();
-		}
-
+		// Subtract the MessageDispatcher from reported actor count to print the actual number of MessageProcessor actors
+		System.out.println("\nWaiting for 3 management actors and " + (callbackReportWatchedActorCount.getResult() - 1) + " message processors to finish...");
+		callbackAllSoulsReaped.getResult();
 		actorSystem.awaitTermination();
+		System.out.println("Done!");
 	}
 
 	@Override
@@ -200,10 +195,5 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private void decrementQueueSize()
 	{
 		queueSize.decrement();
-		final long queue = queueSize.sum();
-		if (notifyEmptyQueue.get() && queue == 0)
-		{
-			callbackEmptyQueue.setResult(null);
-		}
 	}
 }
