@@ -296,8 +296,11 @@ class MessageProcessor extends UntypedActor
 
 	private void processReceivedTimeout()
 	{
-		documentMetadataMap.clear();
-		documentMetadataMap = null;
+		if (documentMetadataMap != null)
+		{
+			documentMetadataMap.clear();
+			documentMetadataMap = null;
+		}
 
 		getContext().parent().tell(new RemoveIdleMessageProcessorMessage(userID), getSelf());
 	}
