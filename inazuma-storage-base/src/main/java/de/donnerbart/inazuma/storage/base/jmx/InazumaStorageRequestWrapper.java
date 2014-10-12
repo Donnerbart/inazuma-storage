@@ -1,6 +1,7 @@
 package de.donnerbart.inazuma.storage.base.jmx;
 
 import com.carrotsearch.hppc.IntObjectOpenHashMap;
+import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.util.NamedThreadFactory;
 
@@ -26,7 +27,7 @@ public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrappe
 	{
 		final String key = UUID.randomUUID().toString();
 		final long created = (System.currentTimeMillis() / 1000) - generator.nextInt(86400);
-		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created);
+		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, PersistenceLevel.ARRIVED_AT_NODE);
 
 		return key;
 	}
