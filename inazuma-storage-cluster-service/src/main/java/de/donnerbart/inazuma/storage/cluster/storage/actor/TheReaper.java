@@ -1,6 +1,5 @@
 package de.donnerbart.inazuma.storage.cluster.storage.actor;
 
-import akka.actor.ActorRef;
 import akka.actor.Terminated;
 import akka.actor.UntypedActor;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
@@ -35,7 +34,7 @@ class TheReaper extends UntypedActor
 		{
 			if (--watchCounter == 0)
 			{
-				allSoulsReaped(((Terminated) message).getActor());
+				allSoulsReaped();
 			}
 		}
 		else if (message instanceof WatchMeMessage)
@@ -53,9 +52,9 @@ class TheReaper extends UntypedActor
 		}
 	}
 
-	private void allSoulsReaped(final ActorRef actor)
+	private void allSoulsReaped()
 	{
-		callbackAllSoulsReaped.setResult(actor);
+		callbackAllSoulsReaped.setResult(null);
 
 		getContext().system().shutdown();
 	}
