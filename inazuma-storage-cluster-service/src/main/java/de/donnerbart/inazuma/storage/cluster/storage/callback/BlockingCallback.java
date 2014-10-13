@@ -1,48 +1,29 @@
 package de.donnerbart.inazuma.storage.cluster.storage.callback;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class BlockingCallback<T>
 {
 	private final AtomicReference<T> result = new AtomicReference<>(null);
-	private final Lock lock = new ReentrantLock();
-	private final Condition condition = lock.newCondition();
+	private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
 	public T getResult()
 	{
-		lock.lock();
 		try
 		{
-			if (result.get() == null)
-			{
-				condition.await(5, TimeUnit.MINUTES);
-			}
+			countDownLatch.await(5, TimeUnit.MINUTES);
 		}
 		catch (InterruptedException ignored)
 		{
-		}
-		finally
-		{
-			lock.unlock();
 		}
 		return result.get();
 	}
 
 	public void setResult(final T result)
 	{
-		lock.lock();
-		try
-		{
-			this.result.set(result);
-			condition.signal();
-		}
-		finally
-		{
-			lock.unlock();
-		}
+		this.result.set(result);
+		this.countDownLatch.countDown();
 	}
 }
