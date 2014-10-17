@@ -6,6 +6,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public abstract class BaseIntegrationTest
 {
@@ -33,6 +34,16 @@ public abstract class BaseIntegrationTest
 	{
 		if (CREATE_BUCKET)
 		{
+            System.out.println("Listing Couchbase buckets...");
+            CouchbaseManager
+                    .getBucketSettings(CB_USERNAME, CB_PASSWORD)
+                    .forEach(bucket -> {
+                        if (BUCKET_NAME.equalsIgnoreCase(bucket.name()))
+                        {
+                            fail("Bucket " + BUCKET_NAME + " already exists!");
+                        }
+                    });
+
 			System.out.println("Creating test bucket...");
 			CouchbaseManager.createBucket(CB_USERNAME, CB_PASSWORD, BUCKET_NAME, 256, true);
 			System.out.println("Done!\n");
