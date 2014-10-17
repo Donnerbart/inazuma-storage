@@ -1,14 +1,12 @@
 package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseGetResponse;
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.response.DatabaseResponse;
 import rx.Observable;
 
 public interface DatabaseWrapper
 {
-	public Observable<DatabaseGetResponse> getDocument(final String id);
+	public Observable<String> getDocument(final String id);
 
-	public Observable<DatabaseResponse> insertDocument(final String key, final String document);
+	public Observable<Object> insertDocument(final String key, final String document);
 
-	public Observable<DatabaseResponse> deleteDocument(final String id);
+	public Observable<Object> deleteDocument(final String id);
 }

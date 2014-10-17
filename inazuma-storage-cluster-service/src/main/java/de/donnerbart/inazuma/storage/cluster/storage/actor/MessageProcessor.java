@@ -154,7 +154,7 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.getDocument(
 				message.getKey()
 		).subscribe(response -> {
-			message.setResult(response.getContent());
+			message.setResult(response);
 
 			storageController.incrementDocumentFetched();
 		}, e -> {
@@ -243,7 +243,7 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.getDocument(
 				DocumentMetadataUtil.createKeyFromUserID(userID)
 		).subscribe(response -> {
-			final ControlMessage controlMessage = new CreateMetadataDocumentMessage(response.getContent());
+			final ControlMessage controlMessage = new CreateMetadataDocumentMessage(response);
 			getSelf().tell(controlMessage, getSelf());
 		}, e -> {
 			log.warning("Could not load document metadata for user {}: {}", userID, e);
