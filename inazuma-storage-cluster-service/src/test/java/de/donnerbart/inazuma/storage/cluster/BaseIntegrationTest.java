@@ -27,6 +27,7 @@ public abstract class BaseIntegrationTest
 		REMOVE_BUCKET = Boolean.valueOf(System.getProperty("bucket.remove", "true"));
 	}
 
+	protected InazumaStorageClusterService inazumaStorageClusterService;
 	protected RequestController requestController;
 
 	@BeforeClass
@@ -49,8 +50,8 @@ public abstract class BaseIntegrationTest
 			System.out.println("Done!\n");
 		}
 
-		InazumaStorageClusterService.start(BUCKET_NAME);
-		requestController = RequestController.getInstance();
+		inazumaStorageClusterService = new InazumaStorageClusterService(BUCKET_NAME, true);
+		requestController = inazumaStorageClusterService.getRequestController();
 	}
 
 	@AfterClass
@@ -63,7 +64,8 @@ public abstract class BaseIntegrationTest
 			System.out.println("Done!\n");
 		}
 
-		InazumaStorageClusterService.stopBlocking();
+		inazumaStorageClusterService.shutdown();
+		inazumaStorageClusterService.await();
 	}
 
 	protected void assertDocumentMetadataDoesNotExist(final String userID)

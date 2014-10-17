@@ -9,7 +9,18 @@ public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 	private final LongAdder timeRangeValue = new LongAdder();
 	private final LongAdder invocations = new LongAdder();
 
-	public BasicStatisticValueAvg(final String group, final String name, final long duration, final TimeUnit timeUnit, final boolean autoRegister)
+	public static BasicStatisticValueAvg getInstanceOf(final String group, final String name)
+	{
+		final BasicStatisticValueAvg candidate = (BasicStatisticValueAvg) StatisticManager.getInstance().getExistingStatisticValue(name);
+		if (candidate != null)
+		{
+			return candidate;
+		}
+
+		return new BasicStatisticValueAvg(group, name);
+	}
+
+	private BasicStatisticValueAvg(final String group, final String name, final long duration, final TimeUnit timeUnit, final boolean autoRegister)
 	{
 		super(group, name, duration, timeUnit);
 		lastTimeRangedValueAvg = 0L;
@@ -20,22 +31,22 @@ public final class BasicStatisticValueAvg extends AbstractStatisticValue<Long>
 		}
 	}
 
-	public BasicStatisticValueAvg(final String group, final String name, final long duration, final TimeUnit timeUnit)
+	private BasicStatisticValueAvg(final String group, final String name, final long duration, final TimeUnit timeUnit)
 	{
 		this(group, name, duration, timeUnit, true);
 	}
 
-	public BasicStatisticValueAvg(final String name, final long duration, final TimeUnit timeUnit)
+	private BasicStatisticValueAvg(final String name, final long duration, final TimeUnit timeUnit)
 	{
 		this(null, name, duration, timeUnit, true);
 	}
 
-	public BasicStatisticValueAvg(final String group, final String name)
+	private BasicStatisticValueAvg(final String group, final String name)
 	{
 		this(group, name, DEFAULT_INTERVAL, DEFAULT_UNIT, true);
 	}
 
-	public BasicStatisticValueAvg(final String name)
+	private BasicStatisticValueAvg(final String name)
 	{
 		this(null, name);
 	}

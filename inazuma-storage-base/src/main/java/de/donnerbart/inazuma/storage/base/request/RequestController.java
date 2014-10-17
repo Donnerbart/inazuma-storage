@@ -15,11 +15,11 @@ public class RequestController
 	private static final AtomicReference<RequestController> INSTANCE = new AtomicReference<>(null);
 	private static final AtomicReference<StorageControllerFacade> STORAGE_CONTROLLER_INSTANCE = new AtomicReference<>(null);
 
-	private final IExecutorService es;
+	private final IExecutorService executorService;
 
-	private final BasicStatisticValue documentAddRequest = new BasicStatisticValue("RequestController", "documentAddRequest");
-	private final BasicStatisticValue documentGetRequest = new BasicStatisticValue("RequestController", "documentGetRequest");
-	private final BasicStatisticValue documentDeleteRequest = new BasicStatisticValue("RequestController", "documentDeleteRequest");
+	private final BasicStatisticValue documentAddRequest = BasicStatisticValue.getInstanceOf("RequestController", "documentAddRequest");
+	private final BasicStatisticValue documentGetRequest = BasicStatisticValue.getInstanceOf("RequestController", "documentGetRequest");
+	private final BasicStatisticValue documentDeleteRequest = BasicStatisticValue.getInstanceOf("RequestController", "documentDeleteRequest");
 
 	public static RequestController getInstance()
 	{
@@ -31,9 +31,9 @@ public class RequestController
 		return STORAGE_CONTROLLER_INSTANCE.get();
 	}
 
-	public RequestController(final HazelcastInstance hz, final StorageControllerFacade storageController)
+	public RequestController(final HazelcastInstance hazelcastInstance, final StorageControllerFacade storageController)
 	{
-		this.es = hz.getExecutorService("inazumaExecutor");
+		this.executorService = hazelcastInstance.getExecutorService("inazumaExecutor");
 
 		STORAGE_CONTROLLER_INSTANCE.set(storageController);
 		INSTANCE.set(this);
@@ -74,13 +74,13 @@ public class RequestController
 		documentDeleteRequest.increment();
 
 		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key);
-		es.submitToKeyOwner(task, userID);
+		executorService.submitToKeyOwner(task, userID);
 	}
 
 	public void markDocumentAsRead(final String userID, final String key)
 	{
 		final MarkDocumentAsReadTask task = new MarkDocumentAsReadTask(userID, key);
-		es.submitToKeyOwner(task, userID);
+		executorService.submitToKeyOwner(task, userID);
 	}
 
 	public void shutdown()
@@ -91,7 +91,7 @@ public class RequestController
 
 	private <T> T getResultFromCallable(final Callable<T> task, final String key)
 	{
-		final Future<T> future = es.submitToKeyOwner(task, key);
+		final Future<T> future = executorService.submitToKeyOwner(task, key);
 
 		try
 		{

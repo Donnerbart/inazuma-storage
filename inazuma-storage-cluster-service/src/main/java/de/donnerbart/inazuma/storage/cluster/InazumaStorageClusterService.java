@@ -14,15 +14,32 @@ import de.donnerbart.inazuma.storage.cluster.storage.wrapper.CouchbaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class InazumaStorageClusterService
 {
-	private static final CountDownLatch latch = new CountDownLatch(1);
-	private static final AtomicReference<StorageControllerFacade> storageControllerReference = new AtomicReference<>(null);
+	private static final AtomicInteger instanceCounter = new AtomicInteger(0);
 
-	public static CountDownLatch start(final String bucketName)
+	private final String instanceNumberString;
+
+	private final StorageControllerFacade storageController;
+	private final RequestController requestController;
+	private final CountDownLatch latch;
+
+	public InazumaStorageClusterService(final String bucketName, final boolean createWithInstanceNumber)
 	{
+		final int instanceNumber;
+		if (createWithInstanceNumber)
+		{
+			instanceNumber = instanceCounter.incrementAndGet();
+			instanceNumberString = " #" + instanceNumber;
+		}
+		else
+		{
+			instanceNumber = 0;
+			instanceNumberString = "";
+		}
+
 		// Get Hazelcast instance
 		final HazelcastInstance hz = HazelcastManager.getInstance();
 
@@ -31,66 +48,46 @@ public class InazumaStorageClusterService
 		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(bucket);
 
 		// Start JMX agent
-		new JMXAgent("de.donnerbart", "inazuma.storage.cluster");
+		new JMXAgent("de.donnerbart", "inazuma.storage.cluster-" + instanceNumber);
 
 		// Start StorageController
-		final StorageControllerFacade storageController = new StorageController(databaseWrapper);
-		storageControllerReference.set(storageController);
+		storageController = new StorageController(databaseWrapper, instanceNumber);
 
 		// Start RequestController
-		new RequestController(hz, storageController);
+		requestController = new RequestController(hz, storageController);
 
 		// Create shutdown event
-		Runtime.getRuntime().addShutdownHook(new Thread(InazumaStorageClusterService::stop));
+		Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
-		return latch;
+		latch = new CountDownLatch(1);
 	}
 
-	public static void stopBlocking()
-	{
-		stop();
-
-		try
-		{
-			latch.await();
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-	}
-
-	public static void stop()
+	public void shutdown()
 	{
 		if (latch.getCount() == 0)
 		{
 			return;
 		}
 
-		System.out.println("Shutdown of Inazuma-Storage requested...\n");
+		System.out.println("Shutdown of Inazuma-Storage" + instanceNumberString + " requested...\n");
 
 		// Shutdown RequestController
-		System.out.println("Shutting down RequestController...");
-		RequestController.getInstance().shutdown();
+		System.out.println("Shutting down RequestController" + instanceNumberString + "...");
+		requestController.shutdown();
 		System.out.println("Done!\n");
 
 		// Shutdown StorageController
-		System.out.println("Shutting down StorageController...");
-		final StorageControllerFacade storageController = storageControllerReference.get();
-		if (storageController != null)
-		{
-			storageController.shutdown();
-			storageControllerReference.set(null);
-		}
+		System.out.println("Shutting down StorageController" + instanceNumberString + "...");
+		storageController.shutdown();
 		System.out.println("Done!\n");
 
 		// Shutdown of Couchbase instance
-		System.out.println("Shutting down Couchbase instance...");
+		System.out.println("Shutting down Couchbase instance" + instanceNumberString + "...");
 		CouchbaseManager.shutdown();
 		System.out.println("Done!\n");
 
 		// Shutdown of Hazelcast instance
-		System.out.println("Shutting down Hazelcast instance...");
+		System.out.println("Shutting down Hazelcast instance" + instanceNumberString + "...");
 		Hazelcast.shutdownAll();
 		System.out.println("Done!\n");
 
@@ -101,5 +98,21 @@ public class InazumaStorageClusterService
 
 		// Release main thread
 		latch.countDown();
+	}
+
+	public void await()
+	{
+		try
+		{
+			latch.await();
+		}
+		catch (InterruptedException ignored)
+		{
+		}
+	}
+
+	public RequestController getRequestController()
+	{
+		return requestController;
 	}
 }

@@ -7,7 +7,6 @@ import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
-import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.cluster.storage.callback.BlockingCallback;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.ReportWatchCountMessage;
@@ -31,28 +30,27 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	private final BlockingCallback<Object> callbackAllSoulsReaped = new BlockingCallback<>();
 	private final BlockingCallback<Integer> callbackReportWatchedActorCount = new BlockingCallback<>();
 
-	private final BasicStatisticValue documentAdded = new BasicStatisticValue("StorageController", "documentAdded");
-	private final BasicStatisticValue documentFetched = new BasicStatisticValue("StorageController", "documentFetched");
-	private final BasicStatisticValue documentDeleted = new BasicStatisticValue("StorageController", "documentDeleted");
+	private final BasicStatisticValue documentAdded = BasicStatisticValue.getInstanceOf("StorageController", "documentAdded");
+	private final BasicStatisticValue documentFetched = BasicStatisticValue.getInstanceOf("StorageController", "documentFetched");
+	private final BasicStatisticValue documentDeleted = BasicStatisticValue.getInstanceOf("StorageController", "documentDeleted");
 
-	private final BasicStatisticValue metadataRetries = new BasicStatisticValue("StorageController", "retriesMetadata");
-	private final BasicStatisticValue metadataPersisted = new BasicStatisticValue("StorageController", "persistedMetadata");
+	private final BasicStatisticValue metadataRetries = BasicStatisticValue.getInstanceOf("StorageController", "retriesMetadata");
+	private final BasicStatisticValue metadataPersisted = BasicStatisticValue.getInstanceOf("StorageController", "persistedMetadata");
 
-	private final BasicStatisticValue documentRetries = new BasicStatisticValue("StorageController", "retriesDocument");
-	private final BasicStatisticValue documentPersisted = new BasicStatisticValue("StorageController", "persistedDocument");
+	private final BasicStatisticValue documentRetries = BasicStatisticValue.getInstanceOf("StorageController", "retriesDocument");
+	private final BasicStatisticValue documentPersisted = BasicStatisticValue.getInstanceOf("StorageController", "persistedDocument");
 
-	public StorageController(final DatabaseWrapper databaseWrapper)
+	public StorageController(final DatabaseWrapper databaseWrapper, final int instanceNumber)
 	{
 		this.databaseWrapper = databaseWrapper;
 
-		this.actorSystem = ActorSystem.create("InazumaStorageCluster");
+		this.actorSystem = ActorSystem.create("InazumaStorageCluster" + (instanceNumber > 0 ? instanceNumber : ""));
 		actorSystem.eventStream().subscribe(ActorFactory.createDeadLetterListener(actorSystem), DeadLetter.class);
 
 		this.theReaper = ActorFactory.createTheReaper(actorSystem, callbackAllSoulsReaped, callbackReportWatchedActorCount);
 		this.messageDispatcher = ActorFactory.createMessageDispatcher(actorSystem, this, theReaper);
 
-		final CustomStatisticValue queueSize = new CustomStatisticValue<>("StorageController", "queueSize", new StorageQueueSizeCollector(this));
-		StatisticManager.getInstance().registerStatisticValue(queueSize);
+		CustomStatisticValue.getInstanceOf("StorageController", "queueSize", new StorageQueueSizeCollector(this));
 	}
 
 	@Override

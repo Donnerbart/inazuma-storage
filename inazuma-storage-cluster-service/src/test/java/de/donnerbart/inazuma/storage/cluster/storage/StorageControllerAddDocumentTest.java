@@ -81,7 +81,7 @@ public class StorageControllerAddDocumentTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        storageController = new StorageController(databaseWrapper);
+        storageController = new StorageController(databaseWrapper, 0);
     }
 
     @AfterMethod

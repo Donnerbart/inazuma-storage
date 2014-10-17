@@ -81,6 +81,11 @@ public final class StatisticManager
 		}
 	}
 
+	public AbstractStatisticValue<?> getExistingStatisticValue(final String name)
+	{
+		return statisticValues.get(name);
+	}
+
 	public void registerStatisticValue(final AbstractStatisticValue<?> statisticValue)
 	{
 		try

@@ -13,7 +13,18 @@ public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 	private final AtomicLong timeRangeValueMax = new AtomicLong(Long.MIN_VALUE);
 	private final LongAdder invocations = new LongAdder();
 
-	public AdvancedStatisticValue(final String group, final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options, final boolean autoRegister)
+	public static AdvancedStatisticValue getInstanceOf(final String group, final String name, final EnumSet<Stat> options)
+	{
+		final AdvancedStatisticValue candidate = (AdvancedStatisticValue) StatisticManager.getInstance().getExistingStatisticValue(name);
+		if (candidate != null)
+		{
+			return candidate;
+		}
+
+		return new AdvancedStatisticValue(group, name, options);
+	}
+
+	private AdvancedStatisticValue(final String group, final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options, final boolean autoRegister)
 	{
 		super(group, name, duration, timeUnit);
 
@@ -44,22 +55,22 @@ public final class AdvancedStatisticValue extends AbstractStatisticValue<Long>
 		}
 	}
 
-	public AdvancedStatisticValue(final String group, final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options)
+	private AdvancedStatisticValue(final String group, final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options)
 	{
 		this(group, name, duration, timeUnit, options, true);
 	}
 
-	public AdvancedStatisticValue(final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options)
+	private AdvancedStatisticValue(final String name, final long duration, final TimeUnit timeUnit, final EnumSet<Stat> options)
 	{
 		this(null, name, duration, timeUnit, options, true);
 	}
 
-	public AdvancedStatisticValue(final String group, final String name, final EnumSet<Stat> options)
+	private AdvancedStatisticValue(final String group, final String name, final EnumSet<Stat> options)
 	{
 		this(group, name, DEFAULT_INTERVAL, DEFAULT_UNIT, options);
 	}
 
-	public AdvancedStatisticValue(final String name, final EnumSet<Stat> options)
+	private AdvancedStatisticValue(final String name, final EnumSet<Stat> options)
 	{
 		this(null, name, options);
 	}
