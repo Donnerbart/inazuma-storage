@@ -17,14 +17,14 @@ public class CouchbaseWrapper implements DatabaseWrapper
 	{
 		return bucket
 				.get(id, StringDocument.class)
-                .singleOrDefault(null)
+				.singleOrDefault(null)
 				.map(document -> {
-                    if (document == null)
-                    {
-                        return null;
-                    }
-                    return document.content();
-                });
+					if (document == null)
+					{
+						return null;
+					}
+					return document.content();
+				});
 	}
 
 	public Observable<Object> insertDocument(final String key, final String json)
