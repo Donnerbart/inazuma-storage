@@ -22,8 +22,8 @@ public class StorageControllerAddDocumentTest
 {
 	private static final Observable<String> DATABASE_GET_RESPONSE_SUCCESS = Observable.just(null);
 	private static final Observable<String> DATABASE_GET_RESPONSE_FAILURE = Observable.error(new BackpressureException());
-	private static final Observable<Object> DATABASE_RESPONSE_SUCCESS = Observable.just(null);
-	private static final Observable<Object> DATABASE_RESPONSE_FAILURE = Observable.error(new BackpressureException());
+	private static final Observable<Boolean> DATABASE_RESPONSE_SUCCESS = Observable.just(Boolean.TRUE);
+	private static final Observable<Boolean> DATABASE_RESPONSE_FAILURE = Observable.error(new BackpressureException());
 
 	private final static String ANY_USER_1 = "1000000";
 	private final static String DOCUMENT_METADATA_KEY_USER_1 = "u-" + ANY_USER_1;

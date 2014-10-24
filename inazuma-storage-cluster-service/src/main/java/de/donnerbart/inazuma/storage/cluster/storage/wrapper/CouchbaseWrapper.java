@@ -27,17 +27,17 @@ public class CouchbaseWrapper implements DatabaseWrapper
 				});
 	}
 
-	public Observable<Object> insertDocument(final String key, final String json)
+	public Observable<Boolean> insertDocument(final String key, final String json)
 	{
 		return bucket
 				.upsert(StringDocument.create(key, json))
-				.map(document -> null);
+				.map(document -> Boolean.TRUE);
 	}
 
-	public Observable<Object> deleteDocument(final String id)
+	public Observable<Boolean> deleteDocument(final String id)
 	{
 		return bucket
 				.remove(id)
-				.map(document -> null);
+				.map(document -> Boolean.TRUE);
 	}
 }
