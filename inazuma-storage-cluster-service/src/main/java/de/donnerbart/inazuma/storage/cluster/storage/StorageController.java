@@ -76,7 +76,7 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created, persistenceLevel);
 		messageDispatcher.tell(message, ActorRef.noSender());
 
-		return (persistenceLevel == PersistenceLevel.ARRIVED_AT_NODE) ? true : message.getCallback().getResult();
+		return (persistenceLevel == PersistenceLevel.DOCUMENT_ON_QUEUE) ? true : message.getCallback().getResult();
 	}
 
 	@Override
