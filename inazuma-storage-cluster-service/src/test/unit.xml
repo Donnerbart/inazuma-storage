@@ -5,6 +5,7 @@
     <test name="StorageController">
         <classes>
             <class name="de.donnerbart.inazuma.storage.cluster.storage.StorageControllerAddDocumentTest"/>
+            <class name="de.donnerbart.inazuma.storage.cluster.storage.StorageControllerDeleteDocumentTest"/>
         </classes>
     </test>
 </suite>
