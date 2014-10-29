@@ -5,14 +5,14 @@ import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 public class DeleteDocumentMessage extends UserCallbackMessage<Boolean>
 {
 	private final String key;
-	private final DeletePersistenceLevel deletePersistenceLevel;
+	private final DeletePersistenceLevel persistenceLevel;
 
-	public DeleteDocumentMessage(final String userID, final String key, final DeletePersistenceLevel deletePersistenceLevel)
+	public DeleteDocumentMessage(final String userID, final String key, final DeletePersistenceLevel persistenceLevel)
 	{
 		super(userID);
 
 		this.key = key;
-		this.deletePersistenceLevel = deletePersistenceLevel;
+		this.persistenceLevel = persistenceLevel;
 	}
 
 	public String getKey()
@@ -20,8 +20,8 @@ public class DeleteDocumentMessage extends UserCallbackMessage<Boolean>
 		return key;
 	}
 
-	public DeletePersistenceLevel getDeletePersistenceLevel()
+	public DeletePersistenceLevel getPersistenceLevel()
 	{
-		return deletePersistenceLevel;
+		return persistenceLevel;
 	}
 }

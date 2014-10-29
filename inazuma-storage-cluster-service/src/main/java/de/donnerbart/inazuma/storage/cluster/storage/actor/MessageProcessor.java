@@ -4,8 +4,8 @@ import akka.actor.ReceiveTimeout;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.cluster.storage.StorageControllerInternalFacade;
 import de.donnerbart.inazuma.storage.cluster.storage.message.control.*;
 import de.donnerbart.inazuma.storage.cluster.storage.message.user.*;
@@ -194,14 +194,14 @@ class MessageProcessor extends UntypedActor
 		databaseWrapper.deleteDocument(
 				message.getKey()
 		).subscribe(response -> {
-			if (message.getDeletePersistenceLevel() == DeletePersistenceLevel.DOCUMENT_DELETED)
+			if (message.getPersistenceLevel() == DeletePersistenceLevel.DOCUMENT_DELETED)
 			{
 				message.setResult(true);
 			}
 
 			final ControlMessage controlMessage = new RemoveDocumentFromMetadataMessage(
 					message.getKey(),
-					message.getDeletePersistenceLevel(),
+					message.getPersistenceLevel(),
 					message.getCallback()
 			);
 			getSelf().tell(controlMessage, getSelf());
@@ -299,7 +299,7 @@ class MessageProcessor extends UntypedActor
 	{
 		documentMetadataMap.remove(message.getKey());
 
-		if (message.getDeletePersistenceLevel() == DeletePersistenceLevel.DOCUMENT_METADATA_CHANGED)
+		if (message.getPersistenceLevel() == DeletePersistenceLevel.DOCUMENT_METADATA_CHANGED)
 		{
 			message.setResult(true);
 		}

@@ -3,8 +3,8 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
-import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.BasicStatisticValue;
 import de.donnerbart.inazuma.storage.base.stats.CustomStatisticValue;
@@ -97,14 +97,14 @@ public class StorageController implements StorageControllerFacade, StorageContro
 	}
 
 	@Override
-	public boolean deleteDocument(final String userID, final String key, final DeletePersistenceLevel deletePersistenceLevel)
+	public boolean deleteDocument(final String userID, final String key, final DeletePersistenceLevel persistenceLevel)
 	{
 		queueSize.increment();
 
-		final DeleteDocumentMessage message = new DeleteDocumentMessage(userID, key, deletePersistenceLevel);
+		final DeleteDocumentMessage message = new DeleteDocumentMessage(userID, key, persistenceLevel);
 		messageDispatcher.tell(message, ActorRef.noSender());
 
-		return (deletePersistenceLevel == DeletePersistenceLevel.REQUEST_ON_QUEUE) ? true : message.getCallback().getResult();
+		return (persistenceLevel == DeletePersistenceLevel.REQUEST_ON_QUEUE) ? true : message.getCallback().getResult();
 	}
 
 	@Override

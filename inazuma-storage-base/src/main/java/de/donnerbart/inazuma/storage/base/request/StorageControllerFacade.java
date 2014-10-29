@@ -8,7 +8,7 @@ public interface StorageControllerFacade
 
 	public String getDocument(String userID, String key);
 
-	public boolean deleteDocument(String userID, String key, final DeletePersistenceLevel deletePersistenceLevel);
+	public boolean deleteDocument(String userID, String key, final DeletePersistenceLevel persistenceLevel);
 
 	public void markDocumentAsReadAsync(String userID, String key);
 

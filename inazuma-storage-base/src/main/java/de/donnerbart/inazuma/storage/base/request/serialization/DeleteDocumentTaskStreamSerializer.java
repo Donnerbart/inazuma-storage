@@ -15,7 +15,7 @@ public class DeleteDocumentTaskStreamSerializer implements StreamSerializer<Dele
 	{
 		out.writeUTF(object.getUserID());
 		out.writeUTF(object.getKey());
-		out.writeInt(object.getDeletePersistenceLevel().ordinal());
+		out.writeInt(object.getPersistenceLevel().ordinal());
 	}
 
 	@Override

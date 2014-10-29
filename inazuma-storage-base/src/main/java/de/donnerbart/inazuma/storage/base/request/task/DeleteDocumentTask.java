@@ -9,13 +9,13 @@ public class DeleteDocumentTask implements Callable<Boolean>
 {
 	private final String userID;
 	private final String key;
-	private final DeletePersistenceLevel deletePersistenceLevel;
+	private final DeletePersistenceLevel persistenceLevel;
 
-	public DeleteDocumentTask(final String userID, final String key, final DeletePersistenceLevel deletePersistenceLevel)
+	public DeleteDocumentTask(final String userID, final String key, final DeletePersistenceLevel persistenceLevel)
 	{
 		this.userID = userID;
 		this.key = key;
-		this.deletePersistenceLevel = deletePersistenceLevel;
+		this.persistenceLevel = persistenceLevel;
 	}
 
 	@Override
@@ -23,7 +23,7 @@ public class DeleteDocumentTask implements Callable<Boolean>
 	{
 		//System.out.println("Delete document for user " + userID + " with key " + key);
 
-		RequestController.getStorageControllerInstance().deleteDocument(userID, key, deletePersistenceLevel);
+		RequestController.getStorageControllerInstance().deleteDocument(userID, key, persistenceLevel);
 
 		return true;
 	}
@@ -38,8 +38,8 @@ public class DeleteDocumentTask implements Callable<Boolean>
 		return key;
 	}
 
-	public DeletePersistenceLevel getDeletePersistenceLevel()
+	public DeletePersistenceLevel getPersistenceLevel()
 	{
-		return deletePersistenceLevel;
+		return persistenceLevel;
 	}
 }

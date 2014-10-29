@@ -74,11 +74,11 @@ public class RequestController
 		return deleteDocument(userID, key, DeletePersistenceLevel.DEFAULT_LEVEL);
 	}
 
-	public boolean deleteDocument(final String userID, final String key, final DeletePersistenceLevel deletePersistenceLevel)
+	public boolean deleteDocument(final String userID, final String key, final DeletePersistenceLevel persistenceLevel)
 	{
 		documentDeleteRequest.increment();
 
-		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key, deletePersistenceLevel);
+		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key, persistenceLevel);
 
 		return getResultFromCallable(task, userID);
 	}
