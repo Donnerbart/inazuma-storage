@@ -99,7 +99,7 @@ public class InazumaStorageClusterServiceTest extends BaseIntegrationTest
 		assertDocumentMetadataDoesNotExist(ANY_USER_2);
 		assertDocumentDoesNotExist(ANY_USER_2, DOCUMENT_3_KEY);
 
-		requestController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED, PersistenceLevel.ARRIVED_AT_NODE);
+		requestController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED, PersistenceLevel.DOCUMENT_ON_QUEUE);
 
 		assertEventually(() -> {
 			final String document = requestController.getDocument(ANY_USER_2, DOCUMENT_3_KEY);
