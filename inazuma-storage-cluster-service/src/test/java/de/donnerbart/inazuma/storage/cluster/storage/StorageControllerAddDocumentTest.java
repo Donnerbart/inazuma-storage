@@ -1,9 +1,12 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
+import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import static org.mockito.Mockito.*;
+import static org.testng.Assert.assertEquals;
+import static util.AssertionThread.assertEventually;
 
 public class StorageControllerAddDocumentTest extends BaseUnitTest
 {
@@ -15,6 +18,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -31,6 +36,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_2_AFTER_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_2_AFTER_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -48,6 +55,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -65,6 +74,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -81,6 +92,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenAnswer(databaseFailOnceAnswer);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -99,6 +112,28 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenAnswer(databaseFailOnceAnswer);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
+		storageController.shutdown();
+
+		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
+		verify(databaseWrapper).insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON);
+		verify(databaseWrapper, times(3)).insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1);
+		verifyZeroInteractions(databaseWrapper);
+	}
+
+	@Test
+	public void persistDocumentMetadataWithFailureOnFirstAndSecondDatabaseSetAssertEventually()
+	{
+		databaseFailOnceAnswer.setNumberOfFailures(2);
+
+		when(databaseWrapper.getDocument(DOCUMENT_METADATA_KEY_USER_1)).thenReturn(DATABASE_GET_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
+		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenAnswer(databaseFailOnceAnswer);
+
+		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED, PersistenceLevel.DOCUMENT_ON_QUEUE);
+		assertEventually(() -> assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1));
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -119,6 +154,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_1, DOCUMENT_2_KEY, DOCUMENT_2_JSON, DOCUMENT_2_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1_AND_2);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -143,6 +180,9 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		storageController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_2), DOCUMENT_METADATA_JSON_3);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper).getDocument(DOCUMENT_METADATA_KEY_USER_1);
@@ -162,6 +202,8 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 
 		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
+
 		storageController.shutdown();
 
 		verify(databaseWrapper, times(2)).getDocument(DOCUMENT_METADATA_KEY_USER_1);
