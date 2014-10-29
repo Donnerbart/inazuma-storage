@@ -14,7 +14,7 @@ import rx.Observable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BaseUnitTest
+public abstract class BaseUnitTest
 {
 	static final Observable<String> DATABASE_GET_RESPONSE_SUCCESS = Observable.just(null);
 	static final Observable<String> DATABASE_GET_RESPONSE_FAILURE = Observable.error(new BackpressureException());
