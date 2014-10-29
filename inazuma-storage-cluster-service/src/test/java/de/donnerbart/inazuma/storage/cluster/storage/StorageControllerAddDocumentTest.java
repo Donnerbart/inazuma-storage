@@ -1,6 +1,6 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
-import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import org.testng.annotations.Test;
 import rx.Observable;
 
@@ -131,7 +131,7 @@ public class StorageControllerAddDocumentTest extends BaseUnitTest
 		when(databaseWrapper.insertDocument(DOCUMENT_1_KEY, DOCUMENT_1_JSON)).thenReturn(DATABASE_RESPONSE_SUCCESS);
 		when(databaseWrapper.insertDocument(DOCUMENT_METADATA_KEY_USER_1, DOCUMENT_METADATA_JSON_1)).thenAnswer(databaseFailOnceAnswer);
 
-		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED, PersistenceLevel.DOCUMENT_ON_QUEUE);
+		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED, AddPersistenceLevel.REQUEST_ON_QUEUE);
 		assertEventually(() -> assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1));
 
 		storageController.shutdown();

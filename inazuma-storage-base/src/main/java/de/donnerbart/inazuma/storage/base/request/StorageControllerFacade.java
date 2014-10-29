@@ -4,7 +4,7 @@ public interface StorageControllerFacade
 {
 	public String getDocumentMetadata(String userID);
 
-	public boolean addDocument(String userID, String key, String json, long created, PersistenceLevel persistenceLevel);
+	public boolean addDocument(String userID, String key, String json, long created, AddPersistenceLevel persistenceLevel);
 
 	public String getDocument(String userID, String key);
 

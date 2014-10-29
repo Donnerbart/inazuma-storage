@@ -1,15 +1,15 @@
 package de.donnerbart.inazuma.storage.cluster.storage.message.user;
 
-import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 
 public class AddDocumentMessage extends UserCallbackMessage<Boolean>
 {
 	private final String json;
 	private final String key;
 	private final long created;
-	private final PersistenceLevel persistenceLevel;
+	private final AddPersistenceLevel persistenceLevel;
 
-	public AddDocumentMessage(final String userID, final String key, final String json, final long created, final PersistenceLevel persistenceLevel)
+	public AddDocumentMessage(final String userID, final String key, final String json, final long created, final AddPersistenceLevel persistenceLevel)
 	{
 		super(userID);
 		this.json = json;
@@ -33,7 +33,7 @@ public class AddDocumentMessage extends UserCallbackMessage<Boolean>
 		return created;
 	}
 
-	public PersistenceLevel getPersistenceLevel()
+	public AddPersistenceLevel getPersistenceLevel()
 	{
 		return persistenceLevel;
 	}

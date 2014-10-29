@@ -3,7 +3,7 @@ package de.donnerbart.inazuma.storage.base.request.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import de.donnerbart.inazuma.storage.base.request.PersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.task.AddDocumentTask;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class AddDocumentTaskStreamSerializer implements StreamSerializer<AddDocu
 	@Override
 	public AddDocumentTask read(final ObjectDataInput in) throws IOException
 	{
-		return new AddDocumentTask(in.readUTF(), in.readUTF(), in.readUTF(), in.readLong(), PersistenceLevel.values()[in.readInt()]);
+		return new AddDocumentTask(in.readUTF(), in.readUTF(), in.readUTF(), in.readLong(), AddPersistenceLevel.values()[in.readInt()]);
 	}
 
 	@Override

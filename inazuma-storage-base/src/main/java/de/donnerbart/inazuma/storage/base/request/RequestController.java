@@ -48,10 +48,10 @@ public class RequestController
 
 	public boolean addDocument(final String userID, final String key, final String json, final long created)
 	{
-		return addDocument(userID, key, json, created, PersistenceLevel.DEFAULT_LEVEL);
+		return addDocument(userID, key, json, created, AddPersistenceLevel.DEFAULT_LEVEL);
 	}
 
-	public boolean addDocument(final String userID, final String key, final String json, final long created, final PersistenceLevel persistenceLevel)
+	public boolean addDocument(final String userID, final String key, final String json, final long created, final AddPersistenceLevel persistenceLevel)
 	{
 		documentAddRequest.increment();
 
