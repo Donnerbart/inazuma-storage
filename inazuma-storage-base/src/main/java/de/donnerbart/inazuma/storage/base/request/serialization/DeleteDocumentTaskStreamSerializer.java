@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.base.request.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.task.DeleteDocumentTask;
 
 import java.io.IOException;
@@ -14,12 +15,13 @@ public class DeleteDocumentTaskStreamSerializer implements StreamSerializer<Dele
 	{
 		out.writeUTF(object.getUserID());
 		out.writeUTF(object.getKey());
+		out.writeInt(object.getDeletePersistenceLevel().ordinal());
 	}
 
 	@Override
 	public DeleteDocumentTask read(final ObjectDataInput in) throws IOException
 	{
-		return new DeleteDocumentTask(in.readUTF(), in.readUTF());
+		return new DeleteDocumentTask(in.readUTF(), in.readUTF(), DeletePersistenceLevel.values()[in.readInt()]);
 	}
 
 	@Override

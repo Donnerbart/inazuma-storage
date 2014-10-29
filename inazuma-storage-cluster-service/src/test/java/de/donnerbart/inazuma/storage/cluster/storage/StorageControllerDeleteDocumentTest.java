@@ -5,7 +5,6 @@ import rx.Observable;
 
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
-import static util.AssertionThread.assertEventually;
 
 public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 {
@@ -29,7 +28,7 @@ public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
 
 		// Delete document and check the result
-		storageController.deleteDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY);
+		storageController.deleteDocument(ANY_USER_1, DOCUMENT_1_KEY);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_1_KEY), null);
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_EMPTY);
 
@@ -57,7 +56,7 @@ public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
 
 		// Delete document and check the result
-		storageController.deleteDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY);
+		storageController.deleteDocument(ANY_USER_1, DOCUMENT_1_KEY);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_1_KEY), null);
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_EMPTY);
 
@@ -85,7 +84,7 @@ public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1_AND_2);
 
 		// Delete one document and check the result
-		storageController.deleteDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY);
+		storageController.deleteDocument(ANY_USER_1, DOCUMENT_1_KEY);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_1_KEY), null);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_2_KEY), DOCUMENT_2_JSON);
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_2);
@@ -120,9 +119,9 @@ public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
 
 		// Delete document and check the result
-		storageController.deleteDocumentAsync(ANY_USER_1, DOCUMENT_1_KEY);
+		storageController.deleteDocument(ANY_USER_1, DOCUMENT_1_KEY);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_1_KEY), null);
-		assertEventually(() -> assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_EMPTY));
+		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_EMPTY);
 
 		storageController.shutdown();
 

@@ -69,12 +69,18 @@ public class RequestController
 		return getResultFromCallable(task, userID);
 	}
 
-	public void deleteDocument(final String userID, final String key)
+	public boolean deleteDocument(final String userID, final String key)
+	{
+		return deleteDocument(userID, key, DeletePersistenceLevel.DEFAULT_LEVEL);
+	}
+
+	public boolean deleteDocument(final String userID, final String key, final DeletePersistenceLevel deletePersistenceLevel)
 	{
 		documentDeleteRequest.increment();
 
-		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key);
-		executorService.submitToKeyOwner(task, userID);
+		final DeleteDocumentTask task = new DeleteDocumentTask(userID, key, deletePersistenceLevel);
+
+		return getResultFromCallable(task, userID);
 	}
 
 	public void markDocumentAsRead(final String userID, final String key)
