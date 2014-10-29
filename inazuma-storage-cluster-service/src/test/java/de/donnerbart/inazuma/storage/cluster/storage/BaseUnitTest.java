@@ -3,8 +3,12 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import com.couchbase.client.core.BackpressureException;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
+import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeMethod;
 import rx.Observable;
 
 import java.util.HashMap;
@@ -67,6 +71,25 @@ public class BaseUnitTest
 		final Map<String, DocumentMetadata> documentMetadataMap2After1 = GsonWrapper.getDocumentMetadataMap(DOCUMENT_METADATA_JSON_1);
 		documentMetadataMap2After1.put(DOCUMENT_2_KEY, DOCUMENT_2_METADATA);
 		DOCUMENT_METADATA_JSON_2_AFTER_1 = GsonWrapper.toJson(documentMetadataMap2After1);
+	}
+
+	@Mock
+	DatabaseWrapper databaseWrapper;
+
+	StorageController storageController;
+
+	DatabaseFailureMultipleTimesAnswer<Boolean> databaseFailOnceAnswer;
+	DatabaseFailureMultipleTimesAnswer<String> databaseGetFailOnceAnswer;
+
+	@BeforeMethod
+	public void setUp() throws Exception
+	{
+		MockitoAnnotations.initMocks(this);
+
+		storageController = new StorageController(databaseWrapper, 0);
+
+		databaseFailOnceAnswer = new DatabaseFailureMultipleTimesAnswer<>(DATABASE_RESPONSE_SUCCESS, DATABASE_RESPONSE_FAILURE);
+		databaseGetFailOnceAnswer = new DatabaseFailureMultipleTimesAnswer<>(DATABASE_GET_RESPONSE_SUCCESS, DATABASE_GET_RESPONSE_FAILURE);
 	}
 
 	@AfterSuite

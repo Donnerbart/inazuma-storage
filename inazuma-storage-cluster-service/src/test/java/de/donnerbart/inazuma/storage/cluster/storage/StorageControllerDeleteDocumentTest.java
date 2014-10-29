@@ -1,9 +1,5 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
-import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
@@ -13,23 +9,6 @@ import static util.AssertionThread.assertEventually;
 
 public class StorageControllerDeleteDocumentTest extends BaseUnitTest
 {
-	@Mock
-	private DatabaseWrapper databaseWrapper;
-
-	private StorageController storageController;
-
-	private DatabaseFailureMultipleTimesAnswer<Boolean> databaseFailOnceAnswer;
-
-	@BeforeMethod
-	public void setUp() throws Exception
-	{
-		MockitoAnnotations.initMocks(this);
-
-		storageController = new StorageController(databaseWrapper, 0);
-
-		databaseFailOnceAnswer = new DatabaseFailureMultipleTimesAnswer<>(DATABASE_RESPONSE_SUCCESS, DATABASE_RESPONSE_FAILURE);
-	}
-
 	@Test
 	public void addAndDeleteDocument()
 	{
