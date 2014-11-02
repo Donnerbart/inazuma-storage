@@ -29,15 +29,18 @@ public class InazumaStorageClusterService
 	public InazumaStorageClusterService(final String bucketName, final boolean createWithInstanceNumber)
 	{
 		final int instanceNumber;
+		final String jmxSubType;
 		if (createWithInstanceNumber)
 		{
 			instanceNumber = instanceCounter.incrementAndGet();
 			instanceNumberString = " #" + instanceNumber;
+			jmxSubType = "-" + instanceNumber;
 		}
 		else
 		{
 			instanceNumber = 0;
 			instanceNumberString = "";
+			jmxSubType = "";
 		}
 
 		// Get Hazelcast instance
@@ -48,7 +51,7 @@ public class InazumaStorageClusterService
 		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(bucket);
 
 		// Start JMX agent
-		new JMXAgent("cluster-" + instanceNumber);
+		new JMXAgent("cluster" + jmxSubType);
 
 		// Start StorageController
 		storageController = new StorageController(databaseWrapper, instanceNumber);
