@@ -5,12 +5,6 @@ public interface InazumaStorageRequestWrapperMBean
 {
 	public String insertSingleDocumentForUser(int userID);
 
-	public String insertSingleDocument();
-
-	public void insertThousandDocuments();
-
-	public void insertMultipleDocuments(int count);
-
 	public String returnRandomDocumentMetadata();
 
 	public String returnDocumentMetadata(String userID);

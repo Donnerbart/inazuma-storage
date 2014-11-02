@@ -48,7 +48,7 @@ public class InazumaStorageClusterService
 		final DatabaseWrapper databaseWrapper = new CouchbaseWrapper(bucket);
 
 		// Start JMX agent
-		new JMXAgent("de.donnerbart", "inazuma.storage.cluster-" + instanceNumber);
+		new JMXAgent("cluster-" + instanceNumber);
 
 		// Start StorageController
 		storageController = new StorageController(databaseWrapper, instanceNumber);

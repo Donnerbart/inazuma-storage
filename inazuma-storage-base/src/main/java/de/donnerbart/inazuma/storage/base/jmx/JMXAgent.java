@@ -8,17 +8,25 @@ import java.lang.management.ManagementFactory;
 
 public class JMXAgent
 {
-	private static final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+	private static final String DOMAIN = "de.donnerbart";
+	private static final MBeanServer MBS = ManagementFactory.getPlatformMBeanServer();
 
-	@SuppressWarnings("SameParameterValue")
-	public JMXAgent(final String domain, final String type)
+	static
+	{
+		// Provide StatisticManager with data for JMX agent
+		StatisticManager.getInstance().registerMBean(MBS, DOMAIN + ":type=StatisticManager");
+	}
+
+	public JMXAgent(final String subType)
+	{
+		this(subType, new InazumaStorageRequestWrapper());
+	}
+
+	public JMXAgent(final String subType, final InazumaStorageJMXBean inazumaStorageJMXBean)
 	{
 		try
 		{
-			mbs.registerMBean(new InazumaStorageRequestWrapper(), new ObjectName(domain + ":type=" + type));
-
-			// Provide StatisticManager with data for JMX agent
-			StatisticManager.getInstance().registerMBean(mbs, domain + ":type=StatisticManager");
+			MBS.registerMBean(inazumaStorageJMXBean, new ObjectName(DOMAIN + ":type=inazuma.storage." + subType));
 		}
 		catch (Exception e)
 		{

@@ -1,13 +1,15 @@
-package de.donnerbart.inazuma.storage.base.jmx;
+package de.donnerbart.inazuma.storage.benchmark.jmx;
 
 import com.carrotsearch.hppc.IntObjectOpenHashMap;
+import de.donnerbart.inazuma.storage.base.jmx.InazumaStorageJMXBean;
 import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
+import de.donnerbart.inazuma.storage.base.util.NamedThreadFactory;
 
 import java.util.Random;
 import java.util.UUID;
 
-public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrapperMBean, InazumaStorageJMXBean
+public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWrapperMBean, InazumaStorageJMXBean
 {
 	private static final int MAX_USER = 100000;
 	private static final IntObjectOpenHashMap<String> MAILS = new IntObjectOpenHashMap<>();
@@ -32,33 +34,29 @@ public class InazumaStorageRequestWrapper implements InazumaStorageRequestWrappe
 	}
 
 	@Override
-	public String returnRandomDocumentMetadata()
+	public String insertSingleDocument()
 	{
-		return returnDocumentMetadata(String.valueOf(createRandomUserID()));
+		return insertSingleDocumentForUser(createRandomUserID());
 	}
 
 	@Override
-	public String returnDocumentMetadata(final String userID)
+	public void insertThousandDocuments()
 	{
-		return RequestController.getInstance().getDocumentMetadata(userID);
+		insertMultipleDocuments(1000);
 	}
 
 	@Override
-	public String returnDocument(final String userID, final String key)
+	public void insertMultipleDocuments(final int count)
 	{
-		return RequestController.getInstance().getDocument(userID, key);
-	}
+		final NamedThreadFactory namedThreadFactory = new NamedThreadFactory("DocumentCreator");
 
-	@Override
-	public void deleteDocument(final String userID, final String key)
-	{
-		RequestController.getInstance().deleteDocument(userID, key);
-	}
-
-	@Override
-	public void markDocumentAsRead(final String userID, final String key)
-	{
-		RequestController.getInstance().markDocumentAsRead(userID, key);
+		namedThreadFactory.newThread(() -> {
+			int i = count;
+			while (i-- > 0)
+			{
+				insertSingleDocument();
+			}
+		}).start();
 	}
 
 	private int createRandomUserID()

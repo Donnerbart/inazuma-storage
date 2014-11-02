@@ -1,4 +1,4 @@
-package de.donnerbart.inazuma.storage.client;
+package de.donnerbart.inazuma.storage.benchmark;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -6,39 +6,34 @@ import de.donnerbart.inazuma.storage.base.jmx.JMXAgent;
 import de.donnerbart.inazuma.storage.base.manager.HazelcastManager;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
+import de.donnerbart.inazuma.storage.benchmark.jmx.InazumaStorageBenchmarkWrapper;
 
 import java.util.concurrent.CountDownLatch;
 
-public class InazumaStorageClient
+public class InazumaStorageBenchmark
 {
-	private static final CountDownLatch latch = new CountDownLatch(1);
+	private final CountDownLatch latch;
 
-	public static CountDownLatch start()
+	public InazumaStorageBenchmark()
 	{
 		// Get Hazelcast instance
 		final HazelcastInstance hz = HazelcastManager.getClientInstance();
 
 		// Start JMX agent
-		new JMXAgent("client");
+		new JMXAgent("benchmark", new InazumaStorageBenchmarkWrapper());
 
 		// Startup request wrapper
 		new RequestController(hz, null);
 
 		// Create shutdown event
-		Runtime.getRuntime().addShutdownHook(new Thread(InazumaStorageClient::stop));
+		Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
-		return latch;
+		latch = new CountDownLatch(1);
 	}
 
-	@SuppressWarnings("unused")
-	public static void shutdown()
+	public void shutdown()
 	{
-		stop();
-	}
-
-	private static void stop()
-	{
-		if (RequestController.getInstance() == null)
+		if (latch.getCount() == 0)
 		{
 			return;
 		}
@@ -62,5 +57,16 @@ public class InazumaStorageClient
 
 		// Release main thread
 		latch.countDown();
+	}
+
+	public void await()
+	{
+		try
+		{
+			latch.await();
+		}
+		catch (InterruptedException ignored)
+		{
+		}
 	}
 }
