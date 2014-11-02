@@ -6,7 +6,6 @@
 
     <artifactId>inazuma-storage-base</artifactId>
     <description>Inazuma-Storage is a fast user to JSON document storage based on Hazelcast and Couchbase</description>
-    <version>0.0.1-SNAPSHOT</version>
 
     <parent>
         <groupId>de.donnerbart</groupId>
