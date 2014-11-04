@@ -110,6 +110,11 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	@Override
 	public void insertMultipleDocuments(final int count)
 	{
+		insertMultipleDocuments(count, false);
+	}
+
+	public void insertMultipleDocuments(final int count, final boolean await)
+	{
 		final CountDownLatch countdown = new CountDownLatch(count);
 		final Runnable task = () -> {
 			final int userID = RANDOM.nextInt(MAX_USER) + 1;
@@ -126,8 +131,9 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 		};
 
 		// Start insert task on single thread executor to return JMX call fast
+		final CountDownLatch latch = new CountDownLatch(1);
 		service.submit(() -> {
-			System.out.println("Inserting " + count + " documents...");
+			System.out.println("Inserting " + count + " documents with " + threadPoolSize + " concurrent threads...");
 			final ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
 			for (int i = 0; i < count; i++)
 			{
@@ -142,11 +148,29 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 				executorService.shutdown();
 				System.out.println("Awaiting termination...");
 				executorService.awaitTermination(10, TimeUnit.SECONDS);
+				latch.countDown();
 			}
 			catch (InterruptedException ignored)
 			{
 			}
 			System.out.println("Done...");
 		});
+
+		if (await)
+		{
+			try
+			{
+				while (latch.getCount() > 0)
+				{
+					System.out.println("Stats: " + getStatistics());
+
+					latch.await(1, TimeUnit.SECONDS);
+				}
+				System.out.println("Stats: " + getStatistics());
+			}
+			catch (InterruptedException ignored)
+			{
+			}
+		}
 	}
 }
