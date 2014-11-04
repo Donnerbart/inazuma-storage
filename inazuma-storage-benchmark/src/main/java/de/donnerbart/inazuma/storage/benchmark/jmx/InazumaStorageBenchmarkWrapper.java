@@ -1,12 +1,12 @@
 package de.donnerbart.inazuma.storage.benchmark.jmx;
 
-import com.carrotsearch.hppc.IntObjectOpenHashMap;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import de.donnerbart.inazuma.storage.base.jmx.InazumaStorageJMXBean;
-import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
-import de.donnerbart.inazuma.storage.base.request.RequestController;
+import de.donnerbart.inazuma.storage.benchmark.actor.ActorFactory;
+import de.donnerbart.inazuma.storage.benchmark.actor.AddDocumentParameters;
+import scala.concurrent.duration.Duration;
 
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,24 +15,15 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWrapperMBean, InazumaStorageJMXBean
 {
-	private static final int MAX_USER = 100000;
-	private static final IntObjectOpenHashMap<String> MAILS = new IntObjectOpenHashMap<>();
-	private static final Random RANDOM = new Random();
-
-	static
-	{
-		for (int userID = 1; userID <= MAX_USER; userID++)
-		{
-			MAILS.put(userID, "{\"userID\":" + userID + "}");
-		}
-	}
+	public final static int MAX_NUMBER_OF_ACTORS = 10000;
+	public final static int MAX_NUMBER_OF_DOCUMENTS = 5000000;
 
 	private final ExecutorService service;
 
 	private final LongAdder durationAdder;
 	private final LongAdder invocationAdder;
 
-	private int threadPoolSize = 10;
+	private int numberOfActors = 10;
 
 	public InazumaStorageBenchmarkWrapper()
 	{
@@ -52,7 +43,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 		}
 
 		final long duration = durationAdder.sum();
-		return (duration / invocations) + " ms avg after " + invocations + " runs";
+		return (duration / invocations) + " ms avg after " + invocations + " invocations";
 	}
 
 	@Override
@@ -63,17 +54,17 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	}
 
 	@Override
-	public int getThreadPoolSize()
+	public int getNumberOfActors()
 	{
-		return threadPoolSize;
+		return numberOfActors;
 	}
 
 	@Override
-	public void setThreadPoolSize(final int threadPoolSize)
+	public void setNumberOfActors(final int numberOfActors)
 	{
-		if (threadPoolSize > 0 && threadPoolSize <= 1000)
+		if (numberOfActors > 0 && numberOfActors <= MAX_NUMBER_OF_ACTORS)
 		{
-			this.threadPoolSize = threadPoolSize;
+			this.numberOfActors = numberOfActors;
 		}
 	}
 
@@ -108,47 +99,54 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	}
 
 	@Override
-	public void insertMultipleDocuments(final int count)
+	public void insertMultipleDocuments(final int numberOfDocuments)
 	{
-		insertMultipleDocuments(count, false);
+		insertMultipleDocuments(numberOfDocuments, false);
 	}
 
-	public void insertMultipleDocuments(final int count, final boolean await)
+	public void insertMultipleDocuments(final int numberOfDocuments, final boolean await)
 	{
-		final CountDownLatch countdown = new CountDownLatch(count);
-		final Runnable task = () -> {
-			final int userID = RANDOM.nextInt(MAX_USER) + 1;
-			final String key = UUID.randomUUID().toString();
-			final long created = (System.currentTimeMillis() / 1000) - RANDOM.nextInt(86400);
+		if (numberOfDocuments > MAX_NUMBER_OF_DOCUMENTS)
+		{
+			return;
+		}
 
-			final long started = System.nanoTime();
-			RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, AddPersistenceLevel.DOCUMENT_METADATA_ADDED);
-
-			durationAdder.add(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
-			invocationAdder.increment();
-
-			countdown.countDown();
-		};
+		final CountDownLatch allDoneLatch = new CountDownLatch(1);
 
 		// Start insert task on single thread executor to return JMX call fast
-		final CountDownLatch latch = new CountDownLatch(1);
 		service.submit(() -> {
-			System.out.println("Inserting " + count + " documents with " + threadPoolSize + " concurrent threads...");
-			final ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-			for (int i = 0; i < count; i++)
+			final CountDownLatch startLatch = new CountDownLatch(1);
+			final CountDownLatch resultLatch = new CountDownLatch(numberOfDocuments);
+			final AddDocumentParameters parameters = new AddDocumentParameters(durationAdder, invocationAdder, startLatch, resultLatch);
+
+			final ActorSystem actorSystem = ActorSystem.create();
+			final ActorRef[] actors = new ActorRef[numberOfActors];
+
+			System.out.println("Creating " + numberOfActors + " concurrent actors...");
+			for (int i = 0; i < numberOfActors; i++)
 			{
-				executorService.submit(task);
+				actors[i] = ActorFactory.createMessageDispatcher(actorSystem, parameters);
 			}
+
+			System.out.println("Queueing " + numberOfDocuments + " documents...");
+			for (int i = 0; i < numberOfDocuments; i++)
+			{
+				actors[i % numberOfActors].tell("", ActorRef.noSender());
+			}
+
+			System.out.println("Inserting documents...");
+			startLatch.countDown();
 
 			try
 			{
-				System.out.println("Waiting for threads to complete...");
-				countdown.await();
-				System.out.println("Request shutdown...");
-				executorService.shutdown();
+				System.out.println("Waiting for actors to complete...");
+				resultLatch.await();
+				System.out.println("Shutdown actor system...");
+				actorSystem.shutdown();
 				System.out.println("Awaiting termination...");
-				executorService.awaitTermination(10, TimeUnit.SECONDS);
-				latch.countDown();
+				actorSystem.awaitTermination(Duration.create(10, TimeUnit.SECONDS));
+
+				allDoneLatch.countDown();
 			}
 			catch (InterruptedException ignored)
 			{
@@ -160,11 +158,11 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 		{
 			try
 			{
-				while (latch.getCount() > 0)
+				while (allDoneLatch.getCount() > 0)
 				{
 					System.out.println("Stats: " + getStatistics());
 
-					latch.await(1, TimeUnit.SECONDS);
+					allDoneLatch.await(1, TimeUnit.SECONDS);
 				}
 				System.out.println("Stats: " + getStatistics());
 			}
