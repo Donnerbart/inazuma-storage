@@ -50,7 +50,7 @@ public class Main
 
 			inazumaStorage.shutdown();
 
-			System.out.println("Stats: " + inazumaStorageBenchmarkWrapper.getStatistics() + " in " + duration + " seconds\n");
+			System.out.println("Stats: " + inazumaStorageBenchmarkWrapper.getStatistics() + " with " + NUMBER_OF_ACTORS + " actors in " + duration + " seconds\n");
 		}
 
 		awaitShutdownAndExit(inazumaStorage, 0);

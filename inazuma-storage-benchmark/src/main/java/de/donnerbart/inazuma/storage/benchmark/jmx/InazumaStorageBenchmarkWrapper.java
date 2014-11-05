@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -24,7 +25,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	private final LongAdder durationAdder;
 	private final LongAdder invocationAdder;
 
-	private int numberOfActors = 10;
+	private AtomicInteger numberOfActors = new AtomicInteger(10);
 
 	public InazumaStorageBenchmarkWrapper()
 	{
@@ -57,7 +58,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	@Override
 	public int getNumberOfActors()
 	{
-		return numberOfActors;
+		return numberOfActors.get();
 	}
 
 	@Override
@@ -65,7 +66,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	{
 		if (numberOfActors > 0 && numberOfActors <= MAX_NUMBER_OF_ACTORS)
 		{
-			this.numberOfActors = numberOfActors;
+			this.numberOfActors.set(numberOfActors);
 		}
 	}
 
@@ -112,6 +113,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 			return -1;
 		}
 
+		final int tmpNumberOfActors = numberOfActors.get();
 		final AtomicLong started = new AtomicLong(0);
 		final CountDownLatch allDoneLatch = new CountDownLatch(1);
 
@@ -122,10 +124,10 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 			final AddDocumentParameters parameters = new AddDocumentParameters(durationAdder, invocationAdder, startLatch, resultLatch);
 
 			final ActorSystem actorSystem = ActorSystem.create();
-			final ActorRef[] actors = new ActorRef[numberOfActors];
+			final ActorRef[] actors = new ActorRef[tmpNumberOfActors];
 
 			System.out.println("Creating " + numberOfActors + " concurrent actors...");
-			for (int i = 0; i < numberOfActors; i++)
+			for (int i = 0; i < tmpNumberOfActors; i++)
 			{
 				actors[i] = ActorFactory.createMessageDispatcher(actorSystem, parameters);
 			}
@@ -133,7 +135,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 			System.out.println("Queueing " + numberOfDocuments + " documents...");
 			for (int i = 0; i < numberOfDocuments; i++)
 			{
-				actors[i % numberOfActors].tell("", ActorRef.noSender());
+				actors[i % tmpNumberOfActors].tell("", ActorRef.noSender());
 			}
 
 			System.out.println("Inserting documents...");
