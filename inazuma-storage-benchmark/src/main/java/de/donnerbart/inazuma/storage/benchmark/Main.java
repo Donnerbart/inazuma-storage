@@ -13,8 +13,8 @@ public class Main
 	static
 	{
 		AUTO_START = Boolean.valueOf(System.getProperty("autostart", "false"));
-		NUMBER_OF_DOCUMENTS = Integer.valueOf(System.getProperty("documents", "1000"));
-		NUMBER_OF_ACTORS = Integer.valueOf(System.getProperty("actors", "10"));
+		NUMBER_OF_DOCUMENTS = Integer.valueOf(System.getProperty("documents", "10000"));
+		NUMBER_OF_ACTORS = Integer.valueOf(System.getProperty("actors", "100"));
 
 		switch (System.getProperty("persistence", "default"))
 		{
