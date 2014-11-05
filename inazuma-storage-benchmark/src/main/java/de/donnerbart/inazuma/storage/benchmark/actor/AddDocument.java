@@ -2,6 +2,7 @@ package de.donnerbart.inazuma.storage.benchmark.actor;
 
 import akka.actor.UntypedActor;
 import com.carrotsearch.hppc.IntObjectOpenHashMap;
+import com.hazelcast.core.ExecutionCallback;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 
 import java.util.Random;
@@ -39,11 +40,24 @@ class AddDocument extends UntypedActor
 		final long created = (System.currentTimeMillis() / 1000) - RANDOM.nextInt(86400);
 
 		final long started = System.nanoTime();
-		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, parameters.getPersistenceLevel());
+		final ExecutionCallback<Boolean> executionCallback = new ExecutionCallback<Boolean>()
+		{
+			@Override
+			public void onResponse(final Boolean aBoolean)
+			{
+				parameters.getDurationAdder().add(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
+				parameters.getInvocationAdder().increment();
 
-		parameters.getDurationAdder().add(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
-		parameters.getInvocationAdder().increment();
+				parameters.getResultLatch().countDown();
+			}
 
-		parameters.getResultLatch().countDown();
+			@Override
+			public void onFailure(final Throwable throwable)
+			{
+				parameters.getResultLatch().countDown();
+			}
+		};
+
+		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, executionCallback, parameters.getPersistenceLevel());
 	}
 }

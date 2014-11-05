@@ -1,6 +1,5 @@
 package de.donnerbart.inazuma.storage.cluster;
 
-import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.GsonWrapper;
 import org.testng.annotations.Test;
@@ -99,7 +98,7 @@ public class InazumaStorageClusterServiceTest extends BaseIntegrationTest
 		assertDocumentMetadataDoesNotExist(ANY_USER_2);
 		assertDocumentDoesNotExist(ANY_USER_2, DOCUMENT_3_KEY);
 
-		requestController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED, AddPersistenceLevel.REQUEST_ON_QUEUE);
+		requestController.addDocument(ANY_USER_2, DOCUMENT_3_KEY, DOCUMENT_3_JSON, DOCUMENT_3_CREATED);
 
 		assertEventually(() -> {
 			final String document = requestController.getDocument(ANY_USER_2, DOCUMENT_3_KEY);

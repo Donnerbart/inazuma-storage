@@ -1,5 +1,6 @@
 package de.donnerbart.inazuma.storage.base.request;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import de.donnerbart.inazuma.storage.base.request.task.*;
@@ -46,18 +47,35 @@ public class RequestController
 		return getResultFromCallable(task, userID);
 	}
 
-	public boolean addDocument(final String userID, final String key, final String json, final long created)
+	public void addDocument(final String userID, final String key, final String json, final long created)
 	{
-		return addDocument(userID, key, json, created, AddPersistenceLevel.DEFAULT_LEVEL);
+		final ExecutionCallback<Boolean> executionCallback = new ExecutionCallback<Boolean>()
+		{
+			@Override
+			public void onResponse(final Boolean aBoolean)
+			{
+			}
+
+			@Override
+			public void onFailure(final Throwable throwable)
+			{
+			}
+		};
+
+		addDocument(userID, key, json, created, executionCallback, AddPersistenceLevel.DEFAULT_LEVEL);
 	}
 
-	public boolean addDocument(final String userID, final String key, final String json, final long created, final AddPersistenceLevel persistenceLevel)
+	public void addDocument(final String userID, final String key, final String json, final long created, final ExecutionCallback<Boolean> executionCallback)
+	{
+		addDocument(userID, key, json, created, executionCallback, AddPersistenceLevel.DEFAULT_LEVEL);
+	}
+
+	public void addDocument(final String userID, final String key, final String json, final long created, final ExecutionCallback<Boolean> executionCallback, final AddPersistenceLevel persistenceLevel)
 	{
 		documentAddRequest.increment();
 
 		final AddDocumentTask task = new AddDocumentTask(userID, key, json, created, persistenceLevel);
-
-		return getResultFromCallable(task, userID);
+		executorService.submitToKeyOwner(task, key, executionCallback);
 	}
 
 	public String getDocument(final String userID, final String key)
