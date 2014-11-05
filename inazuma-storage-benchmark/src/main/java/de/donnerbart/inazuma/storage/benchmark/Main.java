@@ -46,11 +46,11 @@ public class Main
 
 			final InazumaStorageBenchmarkWrapper inazumaStorageBenchmarkWrapper = new InazumaStorageBenchmarkWrapper();
 			inazumaStorageBenchmarkWrapper.setNumberOfActors(NUMBER_OF_ACTORS);
-			inazumaStorageBenchmarkWrapper.insertMultipleDocuments(NUMBER_OF_DOCUMENTS, true);
+			final long duration = inazumaStorageBenchmarkWrapper.insertMultipleDocuments(NUMBER_OF_DOCUMENTS, true);
 
 			inazumaStorage.shutdown();
 
-			System.out.println("Stats: " + inazumaStorageBenchmarkWrapper.getStatistics());
+			System.out.println("Stats: " + inazumaStorageBenchmarkWrapper.getStatistics() + " in " + duration + " seconds\n");
 		}
 
 		awaitShutdownAndExit(inazumaStorage, 0);

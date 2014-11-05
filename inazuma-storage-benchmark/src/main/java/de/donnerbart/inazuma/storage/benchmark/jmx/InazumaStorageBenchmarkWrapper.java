@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWrapperMBean, InazumaStorageJMXBean
@@ -104,13 +105,14 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 		insertMultipleDocuments(numberOfDocuments, false);
 	}
 
-	public void insertMultipleDocuments(final int numberOfDocuments, final boolean await)
+	public long insertMultipleDocuments(final int numberOfDocuments, final boolean await)
 	{
 		if (numberOfDocuments > MAX_NUMBER_OF_DOCUMENTS)
 		{
-			return;
+			return -1;
 		}
 
+		final AtomicLong started = new AtomicLong(0);
 		final CountDownLatch allDoneLatch = new CountDownLatch(1);
 
 		// Start insert task on single thread executor to return JMX call fast
@@ -135,6 +137,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 			}
 
 			System.out.println("Inserting documents...");
+			started.set(System.nanoTime());
 			startLatch.countDown();
 
 			try
@@ -160,15 +163,16 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 			{
 				while (allDoneLatch.getCount() > 0)
 				{
-					System.out.println("Stats: " + getStatistics());
+					System.out.println("Stats: " + getStatistics() + " in " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - started.get()) + " seconds");
 
-					allDoneLatch.await(1, TimeUnit.SECONDS);
+					allDoneLatch.await(10, TimeUnit.SECONDS);
 				}
-				System.out.println("Stats: " + getStatistics());
 			}
 			catch (InterruptedException ignored)
 			{
 			}
 		}
+
+		return TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - started.get());
 	}
 }
