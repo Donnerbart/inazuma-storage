@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.cluster.storage;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
+import com.hazelcast.core.AsyncCallableCallback;
 import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.DeletePersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
@@ -63,21 +64,19 @@ public class StorageController implements StorageControllerFacade, StorageContro
 		return message.getCallback().getResult();
 	}
 
-	public boolean addDocument(final String userID, final String key, final String json, final long created)
-	{
-		return addDocument(userID, key, json, created, AddPersistenceLevel.DEFAULT_LEVEL);
-	}
-
 	@Override
-	public boolean addDocument(final String userID, final String key, final String json, final long created, final AddPersistenceLevel persistenceLevel)
+	public void addDocument(final String userID, final String key, final String json, final long created, final AddPersistenceLevel persistenceLevel, final AsyncCallableCallback<Boolean> callback)
 	{
 		queueSize.increment();
 		documentAdded.increment();
 
-		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created, persistenceLevel);
+		final AddDocumentMessage message = new AddDocumentMessage(userID, key, json, created, persistenceLevel, callback);
 		messageDispatcher.tell(message, ActorRef.noSender());
 
-		return (persistenceLevel == AddPersistenceLevel.REQUEST_ON_QUEUE) ? true : message.getCallback().getResult();
+		if (persistenceLevel == AddPersistenceLevel.REQUEST_ON_QUEUE)
+		{
+			message.setResult(true);
+		}
 	}
 
 	@Override

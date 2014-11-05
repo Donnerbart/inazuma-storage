@@ -1,6 +1,9 @@
 package de.donnerbart.inazuma.storage.cluster.storage;
 
 import com.couchbase.client.core.BackpressureException;
+import com.hazelcast.core.AsyncCallableCallback;
+import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
+import de.donnerbart.inazuma.storage.base.request.StorageControllerFacade;
 import de.donnerbart.inazuma.storage.base.stats.StatisticManager;
 import de.donnerbart.inazuma.storage.cluster.storage.metadata.DocumentMetadata;
 import de.donnerbart.inazuma.storage.cluster.storage.wrapper.DatabaseWrapper;
@@ -13,6 +16,8 @@ import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BaseUnitTest
 {
@@ -96,5 +101,27 @@ public abstract class BaseUnitTest
 	public void tearDown()
 	{
 		StatisticManager.getInstance().shutdown();
+	}
+
+	boolean addDocumentAndWait(final StorageControllerFacade storageController, final String userID, final String key, final String json, final long created)
+	{
+		final AtomicBoolean result = new AtomicBoolean(false);
+		final CountDownLatch latch = new CountDownLatch(1);
+		final AsyncCallableCallback<Boolean> callback = asyncResult -> {
+			result.set(asyncResult);
+			latch.countDown();
+		};
+
+		storageController.addDocument(userID, key, json, created, AddPersistenceLevel.DEFAULT_LEVEL, callback);
+
+		try
+		{
+			latch.await();
+		}
+		catch (InterruptedException ignored)
+		{
+		}
+
+		return result.get();
 	}
 }

@@ -1,11 +1,10 @@
 package de.donnerbart.inazuma.storage.base.request.task;
 
+import com.hazelcast.core.AsyncCallable;
 import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 
-import java.util.concurrent.Callable;
-
-public class AddDocumentTask implements Callable<Boolean>
+public class AddDocumentTask extends AsyncCallable<Boolean>
 {
 	private final String userID;
 	private final String key;
@@ -23,11 +22,11 @@ public class AddDocumentTask implements Callable<Boolean>
 	}
 
 	@Override
-	public Boolean call()
+	protected void asyncCall()
 	{
 		//System.out.println("Add document for user " + userID + " with key " + key);
 
-		return RequestController.getStorageControllerInstance().addDocument(userID, key, json, created, persistenceLevel);
+		RequestController.getStorageControllerInstance().addDocument(userID, key, json, created, persistenceLevel, this::setResult);
 	}
 
 	public String getUserID()

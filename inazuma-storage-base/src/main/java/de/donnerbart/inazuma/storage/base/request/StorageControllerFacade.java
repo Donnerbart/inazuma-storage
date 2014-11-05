@@ -1,10 +1,12 @@
 package de.donnerbart.inazuma.storage.base.request;
 
+import com.hazelcast.core.AsyncCallableCallback;
+
 public interface StorageControllerFacade
 {
 	public String getDocumentMetadata(String userID);
 
-	public boolean addDocument(String userID, String key, String json, long created, AddPersistenceLevel persistenceLevel);
+	public void addDocument(String userID, String key, String json, long created, AddPersistenceLevel persistenceLevel, final AsyncCallableCallback<Boolean> callback);
 
 	public String getDocument(String userID, String key);
 

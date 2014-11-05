@@ -21,7 +21,7 @@ public class StorageControllerGetDocumentTest extends BaseUnitTest
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_EMPTY);
 
 		// Add document and check the result
-		storageController.addDocument(ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
+		addDocumentAndWait(storageController, ANY_USER_1, DOCUMENT_1_KEY, DOCUMENT_1_JSON, DOCUMENT_1_CREATED);
 		assertEquals(storageController.getDocument(ANY_USER_1, DOCUMENT_1_KEY), DOCUMENT_1_JSON);
 		assertEquals(storageController.getDocumentMetadata(ANY_USER_1), DOCUMENT_METADATA_JSON_1);
 
