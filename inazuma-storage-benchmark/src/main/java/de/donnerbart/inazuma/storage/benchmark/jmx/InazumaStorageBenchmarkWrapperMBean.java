@@ -7,9 +7,9 @@ public interface InazumaStorageBenchmarkWrapperMBean
 
 	public void resetStatistics();
 
-	public int getNumberOfActors();
+	public int getDefaultNumberOfActors();
 
-	public void setNumberOfActors(int threadPoolSize);
+	public void setDefaultNumberOfActors(int threadPoolSize);
 
 	public void insertDocuments1();
 

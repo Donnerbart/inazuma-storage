@@ -45,8 +45,8 @@ public class Main
 			}
 
 			final InazumaStorageBenchmarkWrapper inazumaStorageBenchmarkWrapper = new InazumaStorageBenchmarkWrapper();
-			inazumaStorageBenchmarkWrapper.setNumberOfActors(NUMBER_OF_ACTORS);
-			final long duration = inazumaStorageBenchmarkWrapper.insertMultipleDocuments(NUMBER_OF_DOCUMENTS, true);
+			inazumaStorageBenchmarkWrapper.setDefaultNumberOfActors(NUMBER_OF_ACTORS);
+			final long duration = inazumaStorageBenchmarkWrapper.insertMultipleDocuments(NUMBER_OF_DOCUMENTS, NUMBER_OF_ACTORS, true);
 
 			inazumaStorage.shutdown();
 
