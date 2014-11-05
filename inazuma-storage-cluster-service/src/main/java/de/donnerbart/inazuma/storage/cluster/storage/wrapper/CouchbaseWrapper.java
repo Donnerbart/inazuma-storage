@@ -1,7 +1,7 @@
 package de.donnerbart.inazuma.storage.cluster.storage.wrapper;
 
 import com.couchbase.client.java.AsyncBucket;
-import com.couchbase.client.java.document.StringDocument;
+import com.couchbase.client.java.document.RawJsonDocument;
 import rx.Observable;
 
 public class CouchbaseWrapper implements DatabaseWrapper
@@ -16,7 +16,7 @@ public class CouchbaseWrapper implements DatabaseWrapper
 	public Observable<String> getDocument(final String id)
 	{
 		return bucket
-				.get(id, StringDocument.class)
+				.get(id, RawJsonDocument.class)
 				.singleOrDefault(null)
 				.map(document -> {
 					if (document == null)
@@ -30,7 +30,7 @@ public class CouchbaseWrapper implements DatabaseWrapper
 	public Observable<Boolean> insertDocument(final String key, final String json)
 	{
 		return bucket
-				.upsert(StringDocument.create(key, json))
+				.upsert(RawJsonDocument.create(key, json))
 				.map(document -> Boolean.TRUE);
 	}
 
