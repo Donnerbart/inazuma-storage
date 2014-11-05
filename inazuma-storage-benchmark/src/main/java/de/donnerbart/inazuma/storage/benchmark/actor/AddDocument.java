@@ -2,7 +2,6 @@ package de.donnerbart.inazuma.storage.benchmark.actor;
 
 import akka.actor.UntypedActor;
 import com.carrotsearch.hppc.IntObjectOpenHashMap;
-import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.base.request.RequestController;
 
 import java.util.Random;
@@ -40,7 +39,7 @@ class AddDocument extends UntypedActor
 		final long created = (System.currentTimeMillis() / 1000) - RANDOM.nextInt(86400);
 
 		final long started = System.nanoTime();
-		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, AddPersistenceLevel.DOCUMENT_METADATA_ADDED);
+		RequestController.getInstance().addDocument(String.valueOf(userID), key, MAILS.get(userID), created, parameters.getPersistenceLevel());
 
 		parameters.getDurationAdder().add(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
 		parameters.getInvocationAdder().increment();

@@ -3,6 +3,7 @@ package de.donnerbart.inazuma.storage.benchmark.jmx;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import de.donnerbart.inazuma.storage.base.jmx.InazumaStorageJMXBean;
+import de.donnerbart.inazuma.storage.base.request.AddPersistenceLevel;
 import de.donnerbart.inazuma.storage.benchmark.actor.ActorFactory;
 import de.donnerbart.inazuma.storage.benchmark.actor.AddDocumentParameters;
 import scala.concurrent.duration.Duration;
@@ -105,10 +106,10 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 	@Override
 	public void insertMultipleDocuments(final int numberOfDocuments)
 	{
-		insertMultipleDocuments(numberOfDocuments, defaultNumberOfActors.get(), false);
+		insertMultipleDocuments(numberOfDocuments, defaultNumberOfActors.get(), AddPersistenceLevel.DEFAULT_LEVEL, false);
 	}
 
-	public long insertMultipleDocuments(final int numberOfDocuments, final int numberOfActors, final boolean await)
+	public long insertMultipleDocuments(final int numberOfDocuments, final int numberOfActors, final AddPersistenceLevel persistenceLevel, final boolean await)
 	{
 		if (numberOfDocuments > MAX_NUMBER_OF_DOCUMENTS)
 		{
@@ -122,7 +123,7 @@ public class InazumaStorageBenchmarkWrapper implements InazumaStorageBenchmarkWr
 		service.submit(() -> {
 			final CountDownLatch startLatch = new CountDownLatch(1);
 			final CountDownLatch resultLatch = new CountDownLatch(numberOfDocuments);
-			final AddDocumentParameters parameters = new AddDocumentParameters(durationAdder, invocationAdder, startLatch, resultLatch);
+			final AddDocumentParameters parameters = new AddDocumentParameters(durationAdder, invocationAdder, startLatch, resultLatch, persistenceLevel);
 
 			final ActorSystem actorSystem = ActorSystem.create();
 			final ActorRef[] actors = new ActorRef[numberOfActors];
